@@ -16,11 +16,11 @@ this reminder and set this information later, for example at the end of the day.
 spending some time fulling data about themselves, the user will be able to overview all data in 
 day/week/month/year graphs.
 
-### telegram bot features
+### Telegram bot features
 - remind user to set his action type every specific period
 - get images of graphs
 
-### website features
+### Website features
 - a convenient way to fill all data about user actions
 - interactive graphs
 
@@ -30,4 +30,4 @@ day/week/month/year graphs.
 time spending. 
 
 
-[idea_author]: https://www.reddit.com/r/dataisbeautiful/comments/13pbi6v/oc_how_i_spent_every_hour_of_an_entire_year/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button
+[idea_author]: https://www.reddit.com/r/dataisbeautiful/comments/13pbi6v/oc_how_i_spent_every_hour_of_an_entire_year
