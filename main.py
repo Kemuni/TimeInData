@@ -18,6 +18,7 @@ async def on_startup(dispatcher: Dispatcher, bot: Bot) -> None:
 
 
 def register_middlewares(dp: Dispatcher) -> None:
+    """ Register middlewares for messages and callback queries. """
     outer_middlewares = [
         DatabaseMiddleware(get_config().db.dsn),
     ]
@@ -29,9 +30,7 @@ def register_middlewares(dp: Dispatcher) -> None:
 
 
 def get_storage() -> Union[RedisStorage, MemoryStorage]:
-    """
-    Return storage based on the provided configuration.
-    """
+    """ Return storage based on the provided configuration. """
     if get_config().tg_bot.use_redis:
         return RedisStorage.from_url(
             get_config().redis.dsn,
@@ -52,7 +51,4 @@ async def main():
 
 
 if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except (KeyboardInterrupt, SystemExit):
-        logger.error("Бот был выключен!")
+    asyncio.run(main())

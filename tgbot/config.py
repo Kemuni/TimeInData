@@ -1,9 +1,18 @@
-from dataclasses import dataclass
+import os
 from functools import lru_cache
 from typing import Optional
 
-from pydantic import Field, PostgresDsn, SecretStr, RedisDsn
-from pydantic_settings import BaseSettings
+from pydantic import PostgresDsn, SecretStr, RedisDsn
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+@lru_cache
+def get_base_model_config() -> SettingsConfigDict:
+    return SettingsConfigDict(
+        env_file='.env' if os.environ.get('DEBUG', False) == '1' else 'prod.env',
+        env_nested_delimiter='__',
+        extra='ignore',
+    )
 
 
 class DBConfig(BaseSettings):
@@ -24,12 +33,13 @@ class DBConfig(BaseSettings):
     port : int
         The port where the database server is listening.
     """
+    model_config = get_base_model_config() | SettingsConfigDict(env_prefix='POSTGRES_')
 
-    user: str = Field('postgres', alias='POSTGRES_USER')
-    password: str = Field('postgres', alias='POSTGRES_PASSWORD')
-    database: str = Field('TimeInDataDB', alias='POSTGRES_DB')
-    host: str = Field('localhost', alias='POSTGRES_HOST')
-    port: int = Field(5432, alias='POSTGRES_PORT')
+    user: str = 'postgres'
+    password: str = 'postgres'
+    database: str = 'TimeInDataDB'
+    host: str = 'localhost'
+    port: int = 5432
 
     @property
     def dsn(self) -> PostgresDsn:
@@ -56,9 +66,10 @@ class TgBotConfig(BaseSettings):
     use_redis : str
         Boolean variable that indicates whether we are using redis.
     """
+    model_config = get_base_model_config() | SettingsConfigDict(env_prefix='TG_BOT_')
 
-    token: SecretStr = Field(... , alias='TG_BOT_TOKEN')
-    use_redis: bool = Field(False , alias='TG_BOT_USE_REDIS')
+    token: SecretStr
+    use_redis: bool = False
 
 
 class RedisConfig(BaseSettings):
@@ -78,12 +89,13 @@ class RedisConfig(BaseSettings):
     redis_path : str
         The path where Redis server is located.
     """
+    model_config = get_base_model_config() | SettingsConfigDict(env_prefix='REDIS_')
 
-    redis_user: Optional[str] = Field(None, alias='REDIS_USER')
-    redis_password: Optional[str] = Field(None, alias='REDIS_PASSWORD')
-    redis_port: int = Field(6379, alias='REDIS_PORT')
-    redis_host: str = Field('localhost', alias='REDIS_HOST')
-    redis_path: str = Field('/0', alias='REDIS_PATH')
+    redis_user: Optional[str] = None
+    redis_password: Optional[str] = None
+    redis_port: int = 6379
+    redis_host: str = 'localhost'
+    redis_path: str = '/0'
 
     @property
     def dsn(self) -> RedisDsn:
@@ -98,8 +110,7 @@ class RedisConfig(BaseSettings):
         )
 
 
-@dataclass
-class Config:
+class Config(BaseSettings):
     """
     The main configuration class that integrates all the other configuration classes.
 
@@ -112,10 +123,11 @@ class Config:
     redis : RedisConfig
         Holds the settings specific to Redis.
     """
+    model_config = get_base_model_config()
 
-    tg_bot: TgBotConfig
-    db: DBConfig
-    redis: RedisConfig
+    tg_bot: TgBotConfig = TgBotConfig()
+    db: DBConfig = DBConfig()
+    redis: RedisConfig = RedisConfig()
 
 
 @lru_cache
@@ -125,8 +137,4 @@ def get_config() -> Config:
 
     :return: Config object with attributes set as per environment variables.
     """
-    return Config(
-        tg_bot=TgBotConfig(_env_file='.env'),
-        db=DBConfig(),
-        redis=RedisConfig(),
-    )
+    return Config()

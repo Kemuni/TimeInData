@@ -1,6 +1,5 @@
 from typing import Optional
 
-from sqlalchemy import update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
