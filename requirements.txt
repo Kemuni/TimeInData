@@ -1,7 +1,14 @@
+# Main libraries for telegram bots
 aiogram~=3.2.0
-redis~=5.0.1
-pydantic~=2.5.3
+aiogram-dialog~=2.1.0
+
+# Config and settings
+pydantic-settings~=2.1.0
+
+# Logging
 loguru~=0.7.2
 
+# ORM and libs to work with various databases
 SQLAlchemy~=2.0.24
 alembic~=1.13.1
+redis~=5.0.1
