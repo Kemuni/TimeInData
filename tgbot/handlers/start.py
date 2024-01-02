@@ -5,7 +5,7 @@ from aiogram import types
 from aiogram.filters import CommandStart
 from aiogram_dialog import DialogManager, Dialog, Window, StartMode, setup_dialogs
 from aiogram_dialog.widgets.kbd import Button, Start, Column, Back, SwitchTo
-from aiogram_dialog.widgets.text import Const
+from aiogram_dialog.widgets.text import Const, Format
 
 from tgbot.states.start import StartDialogSG
 
@@ -25,8 +25,10 @@ async def on_finish(callback: types.CallbackQuery, button: Button, manager: Dial
 
 dialog = Dialog(
     Window(
-        Const(
+        Format(
             "Hello, {full_name}! 👋\n"
+        ),
+        Const(
             "I am a bot that will help you with time management. "
             "I'll show to you how much time takes your activities 🕣\n"
             "If you want to know more about it, tap on the button at the bottom! 👇"
@@ -55,7 +57,7 @@ dialog = Dialog(
         ),
         Column(
             Back(Const("⬅️ Back")),
-            SwitchTo(Const("Let's try it! 🚩"), id="to_user_settings", state=StartDialogSG.greeting),
+            SwitchTo(Const("Let's try it! 🚩"), id="to_user_settings", state=StartDialogSG.greeting),  # Soon here will be another state
         ),
         state=StartDialogSG.description,
     ),
