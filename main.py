@@ -4,6 +4,7 @@ from typing import Union
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.storage.redis import RedisStorage, DefaultKeyBuilder
+from aiogram_dialog import setup_dialogs
 from loguru import logger
 
 from logger.logger import LoggerCustomizer
@@ -15,6 +16,7 @@ from tgbot.middlewares.database_middleware import DatabaseMiddleware
 async def on_startup(dispatcher: Dispatcher, bot: Bot) -> None:
     register_middlewares(dispatcher)
     dispatcher.include_routers(*routers_list)
+    setup_dialogs(dispatcher)
 
 
 def register_middlewares(dp: Dispatcher) -> None:

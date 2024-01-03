@@ -3,10 +3,11 @@ from typing import Dict, Any
 from aiogram import Router
 from aiogram import types
 from aiogram.filters import CommandStart
-from aiogram_dialog import DialogManager, Dialog, Window, StartMode, setup_dialogs
-from aiogram_dialog.widgets.kbd import Button, Start, Column, Back, SwitchTo
+from aiogram_dialog import DialogManager, Dialog, Window, StartMode
+from aiogram_dialog.widgets.kbd import Start, Column, Back
 from aiogram_dialog.widgets.text import Const, Format
 
+from tgbot.states.settings import SettingsDialogSG
 from tgbot.states.start import StartDialogSG
 
 
@@ -14,14 +15,6 @@ async def get_data(event_from_user: types.User, **kwargs) -> Dict[str, Any]:
     return {
         "full_name": event_from_user.full_name,
     }
-
-
-async def on_finish(callback: types.CallbackQuery, button: Button, manager: DialogManager):
-    if manager.is_preview():
-        await manager.done()
-        return
-    await manager.done()
-
 
 dialog = Dialog(
     Window(
@@ -57,7 +50,12 @@ dialog = Dialog(
         ),
         Column(
             Back(Const("⬅️ Back")),
-            SwitchTo(Const("Let's try it! 🚩"), id="to_user_settings", state=StartDialogSG.greeting),  # Soon here will be another state
+            Start(
+                Const("Let's try it! 🚩"),
+                id="to_user_settings",
+                state=SettingsDialogSG.time,
+                mode=StartMode.RESET_STACK,
+            ),
         ),
         state=StartDialogSG.description,
     ),
@@ -66,7 +64,7 @@ dialog = Dialog(
 
 router = Router()
 router.include_router(dialog)
-setup_dialogs(router)
+
 
 @router.message(CommandStart())
 async def start(message: types.Message, dialog_manager: DialogManager):
