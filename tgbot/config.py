@@ -2,14 +2,19 @@ import os
 from functools import lru_cache
 from typing import Optional
 
+from loguru import logger
 from pydantic import PostgresDsn, SecretStr, RedisDsn
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 @lru_cache
 def get_base_model_config() -> SettingsConfigDict:
+    debug_mode: bool = os.environ.get('DEBUG', False) == '1'
+    if debug_mode:
+        logger.warning('DEBUG MODE ON!')
+
     return SettingsConfigDict(
-        env_file='.env' if os.environ.get('DEBUG', False) == '1' else 'prod.env',
+        env_file='.env' if debug_mode else 'prod.env',
         env_nested_delimiter='__',
         extra='ignore',
     )

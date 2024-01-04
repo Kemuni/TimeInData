@@ -1,5 +1,6 @@
-from typing import Optional
+from typing import Optional, List
 
+from sqlalchemy import update, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -15,15 +16,13 @@ class BaseRepo:
 
 
 class UserRepo(BaseRepo):
-    async def get_or_create_user(self, user_id: int, language: str, username: Optional[str] = None) -> Optional[User]:
+    async def get_or_create(self, user_id: int, language: str, username: Optional[str] = None) -> None:
         """
-        Creates or updates a new user in the database and returns the user object.
-        :param user_id: The user's ID.
+        Creates or updates a new user in the database.
+        :param user_id: The user's telegram ID.
         :param language: The user's language.
         :param username: The user's username. It's an optional parameter.
-        :return: User object, None if there was an error while making a transaction.
         """
-
         insert_stmt = (
             insert(User)
             .values(
@@ -39,12 +38,38 @@ class UserRepo(BaseRepo):
                     last_activity=func.utcnow(),
                 ),
             )
-            .returning(User)
         )
 
-        result = await self.session.execute(insert_stmt)
-
+        await self.session.execute(insert_stmt)
         await self.session.commit()
+
+    async def update_notify_hours(self, user_id: int, new_hours: List[int]) -> None:
+        """
+        Updated user notify hours in the database.
+        :param user_id: The user's telegram ID.
+        :param new_hours: The new user's hours to notify.
+        """
+        update_stmt = (
+            update(User)
+            .where(User.user_id == user_id)
+            .values(notify_hours=new_hours)
+        )
+
+        await self.session.execute(update_stmt)
+        await self.session.commit()
+
+    async def get_notify_hours(self, user_id: int) -> List[int]:
+        """
+        Get user notify hours from the database.
+        :param user_id: The user's telegram ID.
+        :return: List with user notify hours.
+        """
+        select_stmt = (
+            select(User.notify_hours)
+            .where(User.user_id == user_id)
+        )
+
+        result = await self.session.execute(select_stmt)
         return result.scalar_one()
 
 

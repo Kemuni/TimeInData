@@ -2,7 +2,7 @@ import enum
 from datetime import datetime
 from typing import List
 
-from sqlalchemy import ForeignKey, String, TIMESTAMP, BIGINT
+from sqlalchemy import ForeignKey, String, TIMESTAMP, BIGINT, ARRAY, SMALLINT
 from sqlalchemy.orm import DeclarativeBase, relationship
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
@@ -17,11 +17,12 @@ class Base(DeclarativeBase):
 class User(Base):
     __tablename__ = "users"
 
-    user_id: Mapped[int] = mapped_column(BIGINT, unique=True)  # telegram id
+    user_id: Mapped[int] = mapped_column(BIGINT, unique=True)  # user telegram id
     username: Mapped[str] = mapped_column(String(128))
     language: Mapped[str] = mapped_column(String(10))
     joined_at: Mapped[datetime] = mapped_column(TIMESTAMP, server_default=func.utcnow())
     last_activity: Mapped[datetime] = mapped_column(TIMESTAMP, server_default=func.utcnow())
+    notify_hours: Mapped[List[int]] = mapped_column(ARRAY(SMALLINT), nullable=True)
 
     activities: Mapped[List["Activity"]] = relationship(back_populates="user", cascade="all")
 
@@ -42,7 +43,6 @@ class ActivityType(enum.Enum):
 
 class Activity(Base):
     """ Class which represents user's activities at a certain time """
-
     __tablename__ = "actions"
 
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
