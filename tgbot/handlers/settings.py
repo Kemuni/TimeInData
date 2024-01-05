@@ -4,7 +4,7 @@ from typing import Dict, Any, List
 from aiogram import Router
 from aiogram import types
 from aiogram.filters import Command
-from aiogram_dialog import DialogManager, Dialog, Window
+from aiogram_dialog import DialogManager, Dialog, Window, StartMode
 from aiogram_dialog.widgets.kbd import Checkbox, Multiselect, Group, Row, Cancel, Button, ManagedMultiselect
 from aiogram_dialog.widgets.text import Const, Format
 from loguru import logger
@@ -69,7 +69,9 @@ async def save_settings(callback: types.CallbackQuery, button: Button, manager: 
 async def on_start(start_data: Any, manager: DialogManager):
     """ Set last saved user data for dialog from database """
     multi = manager.find(HOURS_SELECTED_BTN_ID)
-    for hour in start_data['hours_selected']:
+    db: DatabaseRepo = manager.middleware_data['db']
+    db_user_hours: List[int] = await db.users.get_notify_hours(manager.event.from_user.id)
+    for hour in db_user_hours:
         await multi.set_checked(hour, True)
 
 
@@ -138,9 +140,4 @@ router.include_router(dialog)
 @router.message(Command('settings'))
 async def settings(message: types.Message, db: DatabaseRepo, dialog_manager: DialogManager):
     """ Start settings dialog and transfer data about user's hours from database"""
-    await dialog_manager.start(
-        SettingsDialogSG.time,
-        data={
-            'hours_selected': await db.users.get_notify_hours(user_id=message.from_user.id)
-        },
-    )
+    await dialog_manager.start(SettingsDialogSG.time, mode=StartMode.RESET_STACK)
