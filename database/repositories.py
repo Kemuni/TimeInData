@@ -75,6 +75,20 @@ class UserRepo(BaseRepo):
         result = await self.session.execute(select_stmt)
         return result.scalar_one()
 
+    async def get_last_activity(self, user_id: int) -> Optional[Activity]:
+        """
+        Get last created activity by user with `user_id`,
+        :param user_id: The user's telegram ID in the database.
+        :return: Last created user's activity.
+        """
+        get_stmt = (
+            select(Activity)
+            .where(Activity.user_id == user_id)
+            .order_by(Activity.time.desc())
+        )
+        result = await self.session.scalars(get_stmt)
+        return result.first()
+
 
 class DatabaseRepo(BaseRepo):
     """
