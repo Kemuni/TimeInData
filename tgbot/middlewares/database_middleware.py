@@ -25,11 +25,12 @@ class DatabaseMiddleware(BaseMiddleware):
         """ Create database repository to work with database and pass it to the handler """
         async with self.session_pool() as session:
             db_repo = DatabaseRepo(session)
-            await db_repo.users.get_or_create(
+            db_user = await db_repo.users.create_or_update(
                 user_id=event.from_user.id,
                 language=event.from_user.language_code,
                 username=event.from_user.username,
             )
 
             data['db'] = db_repo
+            data['db_user'] = db_user
             return await handler(event, data)

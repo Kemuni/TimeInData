@@ -11,10 +11,11 @@ from tgbot.states.settings import SettingsDialogSG
 from tgbot.states.start import StartDialogSG
 
 
-async def get_data(event_from_user: types.User, **kwargs) -> Dict[str, Any]:
+async def getter(event_from_user: types.User, **kwargs) -> Dict[str, Any]:
     return {
         "full_name": event_from_user.full_name,
     }
+
 
 dialog = Dialog(
     Window(
@@ -29,7 +30,7 @@ dialog = Dialog(
         Start(
             Const('Tell me more!'), id="to_bot_description", state=StartDialogSG.description,
         ),
-        getter=get_data,
+        getter=getter,
         state=StartDialogSG.greeting,
     ),
     Window(

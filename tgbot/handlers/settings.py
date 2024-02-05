@@ -70,9 +70,10 @@ async def on_start(start_data: Any, manager: DialogManager):
     """ Set last saved user data for dialog from database """
     multi = manager.find(HOURS_SELECTED_BTN_ID)
     db: DatabaseRepo = manager.middleware_data['db']
-    db_user_hours: List[int] = await db.users.get_notify_hours(manager.event.from_user.id)
-    for hour in db_user_hours:
-        await multi.set_checked(hour, True)
+    db_user_hours = await db.users.get_notify_hours(manager.event.from_user.id)
+    if db_user_hours:
+        for hour in db_user_hours:
+            await multi.set_checked(hour, True)
 
 
 dialog = Dialog(

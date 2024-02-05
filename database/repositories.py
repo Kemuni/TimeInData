@@ -1,11 +1,12 @@
+from datetime import datetime
 from typing import Optional, List
 
-from sqlalchemy import update, select
+from sqlalchemy import update, select, text
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import func
-from database.models import User
+from database.models import User, Activity, ActivityTypes, Base
 
 
 class BaseRepo:
@@ -16,9 +17,9 @@ class BaseRepo:
 
 
 class UserRepo(BaseRepo):
-    async def get_or_create(self, user_id: int, language: str, username: Optional[str] = None) -> None:
+    async def create_or_update(self, user_id: int, language: str, username: Optional[str] = None) -> User:
         """
-        Creates or updates a new user in the database.
+        Creates or updates a new user in the database. Return user.
         :param user_id: The user's telegram ID.
         :param language: The user's language.
         :param username: The user's username. It's an optional parameter.
@@ -26,22 +27,24 @@ class UserRepo(BaseRepo):
         insert_stmt = (
             insert(User)
             .values(
-                user_id=user_id,
+                id=user_id,
                 username=username,
                 language=language,
             )
             .on_conflict_do_update(
-                index_elements=[User.user_id],
+                index_elements=[User.id],
                 set_=dict(
                     username=username,
                     language=language,
                     last_activity=func.utcnow(),
                 ),
             )
+            .returning(User)
         )
 
-        await self.session.execute(insert_stmt)
+        result = await self.session.execute(insert_stmt)
         await self.session.commit()
+        return result.scalar_one()
 
     async def update_notify_hours(self, user_id: int, new_hours: List[int]) -> None:
         """
@@ -51,22 +54,22 @@ class UserRepo(BaseRepo):
         """
         update_stmt = (
             update(User)
-            .where(User.user_id == user_id)
+            .where(User.id == user_id)
             .values(notify_hours=new_hours)
         )
 
         await self.session.execute(update_stmt)
         await self.session.commit()
 
-    async def get_notify_hours(self, user_id: int) -> List[int]:
+    async def get_notify_hours(self, user_id: int) -> Optional[List[int]]:
         """
         Get user notify hours from the database.
         :param user_id: The user's telegram ID.
-        :return: List with user notify hours.
+        :return: List with user notify hours or None.
         """
         select_stmt = (
             select(User.notify_hours)
-            .where(User.user_id == user_id)
+            .where(User.id == user_id)
         )
 
         result = await self.session.execute(select_stmt)
@@ -81,3 +84,11 @@ class DatabaseRepo(BaseRepo):
     @property
     def users(self) -> UserRepo:
         return UserRepo(self.session)
+
+    async def add_objs(self, objs: List[Base]) -> None:
+        """
+        Add new objects from `objs` argument to the database.
+        :param objs: A list of database model objects.
+        """
+        self.session.add_all(objs)
+        await self.session.commit()
