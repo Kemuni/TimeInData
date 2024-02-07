@@ -1,11 +1,11 @@
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, Sequence
 
 from sqlalchemy import update, select, text
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database import func
+from database import func, User
 from database.models import User, Activity, ActivityTypes, Base
 
 
@@ -17,6 +17,30 @@ class BaseRepo:
 
 
 class UserRepo(BaseRepo):
+    async def get_all(self) -> Sequence[User]:
+        """
+        Get a list of Users from database.
+        :return: List of Users.
+        """
+        get_stmt = (
+            select(User)
+        )
+        result = await self.session.scalars(get_stmt)
+        return result.all()
+
+    async def get_by_id(self, user_id: int) -> Optional[User]:
+        """
+        Get a User by its ID from database.
+        :param user_id: User telegram ID.
+        :return: User model.
+        """
+        get_stmt = (
+            select(User)
+            .where(User.id == user_id)
+        )
+        return await self.session.scalar(get_stmt)
+
+
     async def create_or_update(self, user_id: int, language: str, username: Optional[str] = None) -> User:
         """
         Creates or updates a new user in the database. Return user.

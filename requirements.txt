@@ -2,6 +2,10 @@
 aiogram~=3.2.0
 aiogram-dialog~=2.1.0
 
+# API
+fastapi~=0.109.2
+pydantic~=2.5.3
+
 # Config and settings
 pydantic-settings~=2.1.0
 
@@ -9,6 +13,6 @@ pydantic-settings~=2.1.0
 loguru~=0.7.2
 
 # ORM and libs to work with various databases
-SQLAlchemy~=2.0.24
+SQLAlchemy~=2.0.2
 alembic~=1.13.1
 redis~=5.0.1
