@@ -47,16 +47,16 @@ class DBConfig(BaseSettings):
     port: int = 5432
 
     @property
-    def dsn(self) -> PostgresDsn:
+    def url(self) -> str:
         """ Build a Postgres DSN from config. """
-        return PostgresDsn.build(
+        return str(PostgresDsn.build(
             scheme="postgresql+asyncpg",
             username=self.user,
             password=self.password,
             host=self.host,
             port=self.port,
             path=self.database,
-        )
+        ))
 
 
 class TgBotConfig(BaseSettings):
@@ -103,16 +103,16 @@ class RedisConfig(BaseSettings):
     redis_path: str = '/0'
 
     @property
-    def dsn(self) -> RedisDsn:
+    def url(self) -> str:
         """ Constructs and returns a Redis DSN (Data Source Name) for this database configuration. """
-        return RedisDsn.build(
+        return str(RedisDsn.build(
             scheme='redis',
             username=self.redis_user,
             password=self.redis_password,
             host=self.redis_host,
             port=self.redis_port,
             path=self.redis_path
-        )
+        ))
 
 
 class Config(BaseSettings):

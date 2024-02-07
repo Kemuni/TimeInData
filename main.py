@@ -22,7 +22,7 @@ async def on_startup(dispatcher: Dispatcher, bot: Bot) -> None:
 def register_middlewares(dp: Dispatcher) -> None:
     """ Register middlewares for messages and callback queries. """
     outer_middlewares = [
-        DatabaseMiddleware(get_config().db.dsn),
+        DatabaseMiddleware(get_config().db.url),
     ]
     for middleware in outer_middlewares:
         logger.debug(f'Registering middleware {middleware}')
@@ -35,7 +35,7 @@ def get_storage() -> Union[RedisStorage, MemoryStorage]:
     """ Return storage based on the provided configuration. """
     if get_config().tg_bot.use_redis:
         return RedisStorage.from_url(
-            get_config().redis.dsn,
+            get_config().redis.url,
             key_builder=DefaultKeyBuilder(with_bot_id=True, with_destiny=True),
         )
     else:

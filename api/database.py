@@ -71,4 +71,4 @@ class AsyncDBSessionManager:
             await session.close()
 
 
-session_manager = AsyncDBSessionManager(db_url=str(get_config().db.dsn))
+session_manager = AsyncDBSessionManager(db_url=get_config().db.url)

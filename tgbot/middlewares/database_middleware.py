@@ -11,9 +11,9 @@ from database.setup import create_session_pool, create_engine
 class DatabaseMiddleware(BaseMiddleware):
     """ Outer middleware for creating database session for our handlers and adding users info to database """
 
-    def __init__(self, database_dsn: PostgresDsn, echo: bool = False):
+    def __init__(self, database_url: str, echo: bool = False):
         super().__init__()
-        self.engine = create_engine(database_dsn=str(database_dsn), echo=echo)
+        self.engine = create_engine(database_dsn=database_url, echo=echo)
         self.session_pool = create_session_pool(engine=self.engine)
 
     async def __call__(
