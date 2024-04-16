@@ -8,7 +8,7 @@ from aiogram_dialog import setup_dialogs
 from loguru import logger
 
 from logger.logger import LoggerCustomizer
-from config import get_config
+from tgbot.config import get_config
 from tgbot.handlers import routers_list
 from tgbot.middlewares.database_middleware import DatabaseMiddleware
 

@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from typing import Optional, AsyncIterator
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession, AsyncEngine, AsyncConnection
-from config import get_config
+from tgbot.config import get_config
 
 
 class SessionManagerNotInitialized(Exception):

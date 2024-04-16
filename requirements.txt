@@ -4,6 +4,7 @@ aiogram-dialog~=2.1.0
 
 # API
 fastapi~=0.109.2
+uvicorn~=0.27.0
 pydantic~=2.5.3
 
 # Config and settings
@@ -16,3 +17,6 @@ loguru~=0.7.2
 SQLAlchemy~=2.0.2
 alembic~=1.13.1
 redis~=5.0.1
+
+# Task queue
+celery~=5.3.6

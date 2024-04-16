@@ -28,6 +28,20 @@ class UserRepo(BaseRepo):
         result = await self.session.scalars(get_stmt)
         return result.all()
 
+    async def get_ids_to_notify(self, hour: int) -> Sequence[int]:
+        """
+         Get list of user_ids that should be notified on a specific hour.
+
+        :param hour: The hour when user's should be notified.
+        :return: List of user_ids.
+        """
+        get_stmt = (
+            select(User.id)
+            .where(User.notify_hours.contains([hour]))
+        )
+        result = await self.session.scalars(get_stmt)
+        return result.all()
+
     async def get_by_id(self, user_id: int) -> Optional[User]:
         """
         Get a User by its ID from database.
@@ -39,7 +53,6 @@ class UserRepo(BaseRepo):
             .where(User.id == user_id)
         )
         return await self.session.scalar(get_stmt)
-
 
     async def create_or_update(self, user_id: int, language: str, username: Optional[str] = None) -> User:
         """

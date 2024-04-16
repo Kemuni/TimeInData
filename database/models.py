@@ -2,7 +2,8 @@ import enum
 from datetime import datetime
 from typing import List
 
-from sqlalchemy import ForeignKey, String, TIMESTAMP, BIGINT, ARRAY, SMALLINT
+from sqlalchemy import ForeignKey, String, TIMESTAMP, BIGINT, SMALLINT
+from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import DeclarativeBase, relationship
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
