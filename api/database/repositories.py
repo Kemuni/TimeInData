@@ -1,12 +1,12 @@
-from datetime import datetime
 from typing import Optional, List, Sequence
 
-from sqlalchemy import update, select, text
+from sqlalchemy import update, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database import func, User
-from database.models import User, Activity, ActivityTypes, Base
+from api import schemas
+from .func import utcnow
+from .models import User, Activity, Base
 
 
 class BaseRepo:
@@ -15,18 +15,16 @@ class BaseRepo:
     def __init__(self, session: AsyncSession):
         self.session = session
 
+    async def bulk_add(self, objs: List[Base]) -> None:
+        """
+        Add new objects from `objs` argument to the database.
+        :param objs: A list of database model objects.
+        """
+        self.session.add_all(objs)
+        await self.session.commit()
+
 
 class UserRepo(BaseRepo):
-    async def get_all(self) -> Sequence[User]:
-        """
-        Get a list of Users from database.
-        :return: List of Users.
-        """
-        get_stmt = (
-            select(User)
-        )
-        result = await self.session.scalars(get_stmt)
-        return result.all()
 
     async def get_ids_to_notify(self, hour: int) -> Sequence[int]:
         """
@@ -42,29 +40,17 @@ class UserRepo(BaseRepo):
         result = await self.session.scalars(get_stmt)
         return result.all()
 
-    async def get_by_id(self, user_id: int) -> Optional[User]:
-        """
-        Get a User by its ID from database.
-        :param user_id: User telegram ID.
-        :return: User model.
-        """
-        get_stmt = (
-            select(User)
-            .where(User.id == user_id)
-        )
-        return await self.session.scalar(get_stmt)
-
-    async def create_or_update(self, user_id: int, language: str, username: Optional[str] = None) -> User:
+    async def create_or_update(self, id: int, language: str, username: Optional[str] = None) -> User:
         """
         Creates or updates a new user in the database. Return user.
-        :param user_id: The user's telegram ID.
+        :param id: The user's telegram ID.
         :param language: The user's language.
         :param username: The user's username. It's an optional parameter.
         """
         insert_stmt = (
             insert(User)
             .values(
-                id=user_id,
+                id=id,
                 username=username,
                 language=language,
             )
@@ -73,7 +59,7 @@ class UserRepo(BaseRepo):
                 set_=dict(
                     username=username,
                     language=language,
-                    last_activity=func.utcnow(),
+                    last_activity=utcnow(),
                 ),
             )
             .returning(User)
@@ -126,6 +112,11 @@ class UserRepo(BaseRepo):
         result = await self.session.scalars(get_stmt)
         return result.first()
 
+    async def add_activities(self, user_id: int, activities: List[schemas.ActivityBase]):
+        await self.bulk_add(
+            objs=[Activity(user_id=user_id, **i.model_dump()) for i in activities]
+        )
+
 
 class DatabaseRepo(BaseRepo):
     """
@@ -135,11 +126,3 @@ class DatabaseRepo(BaseRepo):
     @property
     def users(self) -> UserRepo:
         return UserRepo(self.session)
-
-    async def add_objs(self, objs: List[Base]) -> None:
-        """
-        Add new objects from `objs` argument to the database.
-        :param objs: A list of database model objects.
-        """
-        self.session.add_all(objs)
-        await self.session.commit()
