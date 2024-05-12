@@ -1,4 +1,4 @@
-from api.routers import users
+from api_service.routers import users
 
 routers_list = [
     users.router,

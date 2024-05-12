@@ -10,8 +10,8 @@ from aiogram_dialog.widgets.input import MessageInput
 from aiogram_dialog.widgets.kbd import Cancel, Checkbox
 from aiogram_dialog.widgets.text import Const, Format
 
-from tgbot.APIParser import APIParser, ActivityBaseIn, ActivityTypes
-from tgbot.states.set_activity import SetActivityDialogSG
+from tgbot_service.APIParser import APIParser, ActivityBaseIn, ActivityTypes
+from tgbot_service.states.set_activity import SetActivityDialogSG
 
 
 class ActivityFormatError(Exception):

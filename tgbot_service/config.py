@@ -6,8 +6,6 @@ from loguru import logger
 from pydantic import SecretStr, RedisDsn
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from api.config import APIConfig
-
 
 @lru_cache
 def get_base_model_config() -> SettingsConfigDict:
@@ -116,7 +114,7 @@ class Config(BaseSettings):
         Holds the settings related to the Telegram Bot.
     msg_texts : MessagesTextConfig
         Holds the status messages for telegram bot.
-    api : APIConfig
+    api : APISettings
         Holds the settings to communicate with API service.
     redis : RedisConfig
         Holds the settings specific to Redis.
@@ -126,7 +124,7 @@ class Config(BaseSettings):
     debug: bool = 0
     tg_bot: TgBotConfig = TgBotConfig()
     msg_texts: MessagesTextConfig = MessagesTextConfig()
-    api: APIConfig = APIConfig()
+    api: APISettings = APISettings()
     redis: RedisConfig = RedisConfig()
 
 

@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from typing import Optional, AsyncIterator
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession, AsyncEngine, AsyncConnection
 
-from api.config import get_config
+from api_service.config import get_config
 
 
 class SessionManagerNotInitialized(Exception):

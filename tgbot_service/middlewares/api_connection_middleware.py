@@ -3,7 +3,7 @@ from typing import Callable, Dict, Any, Awaitable, Union
 from aiogram import BaseMiddleware
 from aiogram.types import Message, CallbackQuery
 
-from tgbot.APIParser import APIParser
+from tgbot_service.APIParser import APIParser
 
 
 class APIConnectionMiddleware(BaseMiddleware):

@@ -8,9 +8,9 @@ from aiogram_dialog import setup_dialogs
 from loguru import logger
 
 from logger.logger import LoggerCustomizer
-from tgbot.config import get_config
-from tgbot.handlers import routers_list
-from tgbot.middlewares.api_connection_middleware import APIConnectionMiddleware
+from tgbot_service.config import get_config
+from tgbot_service.handlers import routers_list
+from tgbot_service.middlewares.api_connection_middleware import APIConnectionMiddleware
 
 
 async def on_startup(dispatcher: Dispatcher, bot: Bot) -> None:

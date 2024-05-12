@@ -6,7 +6,7 @@ from loguru import logger
 
 from database.repositories import UserRepo
 from database.setup import create_engine, create_session_pool
-from tgbot.config import get_config
+from tgbot_service.config import get_config
 
 
 async def send_message(bot: Bot, user_id: int, text: str) -> bool:

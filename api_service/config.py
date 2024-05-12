@@ -82,7 +82,7 @@ class Config(BaseSettings):
     Attributes
     ----------
     api : APIConfig
-        Holds the settings related to the API.
+        Holds the settings related to the api_service.
     db : DBConfig
         Holds the settings specific to the database.
     """

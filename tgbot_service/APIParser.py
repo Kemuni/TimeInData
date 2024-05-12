@@ -5,7 +5,7 @@ from typing import AsyncIterator, List, Optional
 import httpx
 from pydantic.dataclasses import dataclass
 
-from tgbot.config import get_config
+from tgbot_service.config import get_config
 
 
 class ActivityTypes(enum.Enum):
@@ -38,7 +38,7 @@ class Activity(ActivityBaseOut):
 
 class APIParser:
     """ Class for interaction with our API service. """
-    HTTPS_PREFIX: str = f"http{'' if get_config().debug else 's'}://{get_config().api.host}:{get_config().api.port}/"
+    HTTPS_PREFIX: str = f"http{'' if get_config().debug else 's'}://{get_config().api.domain}:{get_config().api.port}/"
     PUT_USER_URI: str = HTTPS_PREFIX + "users"
     PUT_USER_NOTIFY_HOURS_URI: str = HTTPS_PREFIX + "users/{user_id}/notify_hours"
     GET_USER_NOTIFY_HOURS_URI: str = HTTPS_PREFIX + "users/{user_id}/notify_hours"

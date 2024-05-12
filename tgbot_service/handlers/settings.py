@@ -9,8 +9,8 @@ from aiogram_dialog.widgets.kbd import Checkbox, Multiselect, Group, Row, Cancel
 from aiogram_dialog.widgets.text import Const, Format
 from loguru import logger
 
-from tgbot.APIParser import APIParser
-from tgbot.states.settings import SettingsDialogSG
+from tgbot_service.APIParser import APIParser
+from tgbot_service.states.settings import SettingsDialogSG
 
 
 NEED_EXAMPLE_BTN_ID: str = "need_example"

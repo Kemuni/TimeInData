@@ -4,7 +4,7 @@ from sqlalchemy import update, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from api import schemas
+from api_service import schemas
 from .func import utcnow
 from .models import User, Activity, Base
 
