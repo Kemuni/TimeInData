@@ -9,8 +9,9 @@ from aiogram_dialog.widgets.kbd import Checkbox, Multiselect, Group, Row, Cancel
 from aiogram_dialog.widgets.text import Const, Format
 from loguru import logger
 
-from database import DatabaseRepo
+from tgbot.APIParser import APIParser
 from tgbot.states.settings import SettingsDialogSG
+
 
 NEED_EXAMPLE_BTN_ID: str = "need_example"
 HOURS_SELECTED_BTN_ID: str = "hours_select"
@@ -54,8 +55,8 @@ async def save_settings(callback: types.CallbackQuery, button: Button, manager: 
     selected_hours.sort()
     selected_hours_str = ', '.join(f"{i:02d}:00" for i in selected_hours)
 
-    db: DatabaseRepo = manager.middleware_data['db']
-    await db.users.update_notify_hours(user_id=callback.from_user.id, new_hours=selected_hours)
+    api: APIParser = manager.middleware_data['api']
+    await api.update_user_notify_hours(user_id=callback.from_user.id, notify_hours=selected_hours)
 
     logger.info(f'User (tg_id={callback.from_user.id}) change notify hours to {selected_hours_str}')
     await callback.message.edit_text(
@@ -69,10 +70,10 @@ async def save_settings(callback: types.CallbackQuery, button: Button, manager: 
 async def on_start(start_data: Any, manager: DialogManager):
     """ Set last saved user data for dialog from database """
     multi = manager.find(HOURS_SELECTED_BTN_ID)
-    db: DatabaseRepo = manager.middleware_data['db']
-    db_user_hours = await db.users.get_notify_hours(manager.event.from_user.id)
-    if db_user_hours:
-        for hour in db_user_hours:
+    api: APIParser = manager.middleware_data['api']
+    user_notify_hours = await api.get_user_notify_hours(manager.event.from_user.id)
+    if user_notify_hours:
+        for hour in user_notify_hours:
             await multi.set_checked(hour, True)
 
 
@@ -134,11 +135,11 @@ dialog = Dialog(
 )
 
 
-router = Router()
+router = Router(name=__name__)
 router.include_router(dialog)
 
 
 @router.message(Command('settings'))
-async def settings(message: types.Message, db: DatabaseRepo, dialog_manager: DialogManager):
+async def settings(message: types.Message, api: APIParser, dialog_manager: DialogManager):
     """ Start settings dialog and transfer data about user's hours from database"""
     await dialog_manager.start(SettingsDialogSG.time, mode=StartMode.RESET_STACK)

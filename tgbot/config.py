@@ -3,8 +3,10 @@ from functools import lru_cache
 from typing import Optional
 
 from loguru import logger
-from pydantic import PostgresDsn, SecretStr, RedisDsn
+from pydantic import SecretStr, RedisDsn
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from api.config import APIConfig
 
 
 @lru_cache
@@ -20,43 +22,22 @@ def get_base_model_config() -> SettingsConfigDict:
     )
 
 
-class DBConfig(BaseSettings):
+class APISettings(BaseSettings):
     """
-    Database configuration class.
-    This class holds the settings for the database, such as host, password, port, etc.
+    API configuration class.
+    This class holds the settings for communication with the API service.
 
     Attributes
     ----------
-    host : str
-        The host where the database server is located.
-    password : str
-        The password used to authenticate with the database.
-    user : str
-        The username used to authenticate with the database.
-    database : str
-        The name of the database.
-    port : int
-        The port where the database server is listening.
+    domain : str
+        The domain of API service.
+    port : port
+        The port of API service.
     """
-    model_config = get_base_model_config() | SettingsConfigDict(env_prefix='POSTGRES_')
+    model_config = get_base_model_config() | SettingsConfigDict(env_prefix='API_')
 
-    user: str = 'postgres'
-    password: str = 'postgres'
-    database: str = 'TimeInDataDB'
-    host: str = 'localhost'
-    port: int = 5432
-
-    @property
-    def url(self) -> str:
-        """ Build a Postgres DSN from config. """
-        return str(PostgresDsn.build(
-            scheme="postgresql+asyncpg",
-            username=self.user,
-            password=self.password,
-            host=self.host,
-            port=self.port,
-            path=self.database,
-        ))
+    domain: str = '127.0.0.1'
+    port: int = 8000
 
 
 class TgBotConfig(BaseSettings):
@@ -75,6 +56,16 @@ class TgBotConfig(BaseSettings):
 
     token: SecretStr
     use_redis: bool = False
+
+
+class MessagesTextConfig(BaseSettings):
+    """
+    Message text configuration class.
+    This class holds status messages for user.
+    """
+    model_config = get_base_model_config() | SettingsConfigDict(env_prefix='MESSAGE_TEXT_')
+
+    error: str = "⚠️ Something went wrong. Try again later!"
 
 
 class RedisConfig(BaseSettings):
@@ -123,15 +114,19 @@ class Config(BaseSettings):
     ----------
     tg_bot : TgBotConfig
         Holds the settings related to the Telegram Bot.
-    db : DBConfig
-        Holds the settings specific to the database.
+    msg_texts : MessagesTextConfig
+        Holds the status messages for telegram bot.
+    api : APIConfig
+        Holds the settings to communicate with API service.
     redis : RedisConfig
         Holds the settings specific to Redis.
     """
     model_config = get_base_model_config()
 
+    debug: bool = 0
     tg_bot: TgBotConfig = TgBotConfig()
-    db: DBConfig = DBConfig()
+    msg_texts: MessagesTextConfig = MessagesTextConfig()
+    api: APIConfig = APIConfig()
     redis: RedisConfig = RedisConfig()
 
 

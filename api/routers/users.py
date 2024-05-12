@@ -1,6 +1,7 @@
+from datetime import datetime
 from typing import List, Annotated, Optional
 
-from fastapi import APIRouter, Depends, status, Body
+from fastapi import APIRouter, Depends, status, Body, HTTPException
 
 from api import schemas
 from api.database.repositories import DatabaseRepo
@@ -9,12 +10,12 @@ from api.dependencies import get_db
 router = APIRouter(prefix='/users', tags=['users'])
 
 
-@router.put('/', status_code=status.HTTP_200_OK)
+@router.put('', status_code=status.HTTP_200_OK)
 async def create_or_update(user: schemas.UserBase, db: DatabaseRepo = Depends(get_db)):
     await db.users.create_or_update(**user.model_dump())
 
 
-@router.put('/{user_id}', status_code=status.HTTP_200_OK)
+@router.put('/{user_id}/notify_hours', status_code=status.HTTP_200_OK)
 async def update_notify_hours(
         user_id: int,
         notify_hours: Annotated[List[schemas.HourNumber], Body(embed=True)],
@@ -41,4 +42,8 @@ async def add_activities(
         activities: Annotated[List[schemas.ActivityBase], Body(embed=True)],
         db: DatabaseRepo = Depends(get_db)
 ):
+    for activity in activities:
+        if activity.time > datetime.now():
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                detail=f"Incorrect activity time. {activity.time} is invalid")
     await db.users.add_activities(user_id, activities)

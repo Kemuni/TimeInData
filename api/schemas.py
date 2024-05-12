@@ -1,7 +1,7 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import List
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_serializer
 from pydantic.functional_validators import AfterValidator
 from typing_extensions import Annotated
 
@@ -22,12 +22,6 @@ class UserBase(BaseModel):
     language: str
 
 
-class User(UserBase):
-    joined_at: datetime
-    last_activity: datetime
-    notify_hours: HourNumber
-
-
 class UserNotifyHoursOut(BaseModel):
     notify_hours: List[HourNumber]
 
@@ -35,6 +29,10 @@ class UserNotifyHoursOut(BaseModel):
 class ActivityBase(BaseModel):
     type: ActivityTypes
     time: datetime
+
+    @field_serializer("type")
+    def serialize_type(self, type: ActivityTypes):
+        return type.name
 
 
 class LastActivityOut(ActivityBase):

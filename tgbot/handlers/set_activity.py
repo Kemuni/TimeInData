@@ -10,7 +10,7 @@ from aiogram_dialog.widgets.input import MessageInput
 from aiogram_dialog.widgets.kbd import Cancel, Checkbox
 from aiogram_dialog.widgets.text import Const, Format
 
-from database import DatabaseRepo, ActivityTypes, Activity
+from tgbot.APIParser import APIParser, ActivityBaseIn, ActivityTypes
 from tgbot.states.set_activity import SetActivityDialogSG
 
 
@@ -26,7 +26,7 @@ async def getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, Any]:
     return {
         SHOW_ACTIVITIES_BTN_ID: dialog_manager.find(SHOW_ACTIVITIES_BTN_ID).is_checked(),
         'hours_to_submit_str': ", ".join(
-            str(hour)+':00' for hour in dialog_manager.start_data['hours_to_submit']
+            str(hour) + ':00' for hour in dialog_manager.start_data['hours_to_submit']
         ),
     }
 
@@ -59,21 +59,25 @@ def parse_hours_range(hour_str: str) -> range:
 
 
 def parse_activity_from_string(activity_row: str, hours_to_submit: set[int], user_id: int) \
-        -> Tuple[List[Activity], set[int]]:
+        -> Tuple[List[ActivityBaseIn], set[int]]:
     """
-    Parse activity from hour and activity string format. Return list of activities objects and new list of hours to submit.
-    :param activity_row:
+    Parse activity from hour and activity string format. Return list of activities objects and new list of hours to
+    submit.
+
+    :param activity_row: String in format like "<time> <activity_type>" or "<from_time>-<to_time> <activity_type>",
     :param hours_to_submit: Hours, that user have to submit with activity.
     :param user_id: Telegram user ID.
     :return: Return list of activities objects and new list of hours to submit.
     """
     # Validate and parse data from text given
     try:
+        hour_str: str
+        activity: str
         hour_str, activity = activity_row.split()
     except ValueError:
         raise ActivityFormatError('⚠️ You have written your message in wrong format. Try again!')
 
-    activity = activity.strip()
+    activity: str = activity.strip()
     if not hasattr(ActivityTypes, activity.upper()):
         raise ActivityFormatError(
             f'⚠️ The activity "{activity}" does not exist.\n'
@@ -92,10 +96,9 @@ def parse_activity_from_string(activity_row: str, hours_to_submit: set[int], use
 
         hours_to_submit.remove(hour)
         activities.append(
-            Activity(
-                user_id=user_id,
-                type=activity.upper(),
-                time=datetime(today.year, today.month, today.day, hour),
+            ActivityBaseIn(
+                type=ActivityTypes[activity.upper()].value,
+                time=datetime(today.year, today.month, today.day, hour).strftime(APIParser.DATETIME_FORMAT),
             )
         )
 
@@ -105,11 +108,12 @@ def parse_activity_from_string(activity_row: str, hours_to_submit: set[int], use
 async def process_message(message: types.Message, msg_input: MessageInput, manager: DialogManager):
     """ Get message and create activity from data given in user's message """
     hours_to_submit: set[int] = set(manager.start_data['hours_to_submit'])
-    activities: List[Activity] = []
+    activities: List[ActivityBaseIn] = []
     activity_items = message.text.strip().split('\n')
     try:
         for activity_row in activity_items:
-            new_activities, hours_to_submit = parse_activity_from_string(activity_row, hours_to_submit, message.from_user.id)
+            new_activities, hours_to_submit = parse_activity_from_string(activity_row, hours_to_submit,
+                                                                         message.from_user.id)
             activities.extend(new_activities)
     except ActivityFormatError as e:
         await message.reply(str(e))
@@ -119,8 +123,8 @@ async def process_message(message: types.Message, msg_input: MessageInput, manag
         await message.reply('⚠️ You have to set activity for all hours. Try again!')
         return
 
-    db: DatabaseRepo = manager.middleware_data['db']
-    await db.add_objs(activities)
+    api: APIParser = manager.middleware_data['api']
+    await api.add_user_activities(message.from_user.id, activities)
 
     await manager.next()
 
@@ -161,16 +165,16 @@ dialog = Dialog(
     ),
 )
 
-
-router = Router()
+router = Router(name=__name__)
 router.include_router(dialog)
 
 
 @router.message(Command('set_activities'))
-async def set_activities(message: types.Message, db: DatabaseRepo, dialog_manager: DialogManager):
+async def set_activities(message: types.Message, api: APIParser, dialog_manager: DialogManager):
     today = datetime.now()
-    last_activity = await db.users.get_last_activity(message.from_user.id)
-    first_hour_to_set = last_activity.time.hour + 1 if last_activity and last_activity.time.day == today.day else 0
+    last_activity = await api.get_user_last_activity(message.from_user.id)
+    last_activity_time = datetime.strptime(last_activity.time, APIParser.DATETIME_FORMAT)
+    first_hour_to_set = last_activity_time.hour + 1 if last_activity and last_activity_time.day == today.day else 0
     hours_to_submit = [hour for hour in range(first_hour_to_set, today.hour)]
 
     if hours_to_submit:
