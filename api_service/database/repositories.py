@@ -1,6 +1,6 @@
 from typing import Optional, List, Sequence
 
-from sqlalchemy import update, select
+from sqlalchemy import update, select, ScalarResult
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -37,20 +37,20 @@ class UserRepo(BaseRepo):
             select(User.id)
             .where(User.notify_hours.contains([hour]))
         )
-        result = await self.session.scalars(get_stmt)
-        return result.all()
+        result = await self.session.execute(get_stmt)
+        return result.scalars().all()
 
-    async def create_or_update(self, id: int, language: str, username: Optional[str] = None) -> User:
+    async def create_or_update(self, user_id: int, language: str, username: Optional[str] = None) -> User:
         """
         Creates or updates a new user in the database. Return user.
-        :param id: The user's telegram ID.
+        :param user_id: The user's telegram ID.
         :param language: The user's language.
         :param username: The user's username. It's an optional parameter.
         """
         insert_stmt = (
             insert(User)
             .values(
-                id=id,
+                id=user_id,
                 username=username,
                 language=language,
             )
@@ -112,7 +112,12 @@ class UserRepo(BaseRepo):
         result = await self.session.scalars(get_stmt)
         return result.first()
 
-    async def add_activities(self, user_id: int, activities: List[schemas.ActivityBase]):
+    async def add_activities(self, user_id: int, activities: List[schemas.ActivityBase]) -> None:
+        """
+        Add list of new activities for user with `user_id`,
+        :param user_id: The user's telegram ID in the database.
+        :param activities: A list of new activities.
+        """
         await self.bulk_add(
             objs=[Activity(user_id=user_id, **i.model_dump()) for i in activities]
         )

@@ -1,8 +1,10 @@
 from contextlib import asynccontextmanager
 
+import uvicorn
 from fastapi import FastAPI
 
 from api_service.config import get_config
+from api_service.logger.log_conf import LOGGING_CONFIG
 from api_service.routers import routers_list
 
 
@@ -23,7 +25,9 @@ def init_app() -> FastAPI:
     return app
 
 
-if __name__ == '__main__':
-    import uvicorn
+def main() -> None:
+    uvicorn.run(init_app(), host=get_config().api.host, port=get_config().api.port, log_config=LOGGING_CONFIG)
 
-    uvicorn.run(init_app(), host=get_config().api.host, port=get_config().api.port)
+
+if __name__ == '__main__':
+    main()

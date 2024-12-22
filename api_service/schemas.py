@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List
 
-from pydantic import BaseModel, ConfigDict, field_serializer
+from pydantic import BaseModel, ConfigDict, field_serializer, Field
 from pydantic.functional_validators import AfterValidator
 from typing_extensions import Annotated
 
@@ -17,13 +17,17 @@ HourNumber = Annotated[int, AfterValidator(hour_validate)]
 
 
 class UserBase(BaseModel):
-    id: int
+    id: int = Field(..., serialization_alias="user_id")
     username: str
     language: str
 
 
 class UserNotifyHoursOut(BaseModel):
     notify_hours: List[HourNumber]
+
+
+class UsersToNotifyOut(BaseModel):
+    user_ids: List[int]
 
 
 class ActivityBase(BaseModel):

@@ -1,21 +1,25 @@
 import asyncio
-from datetime import datetime
 
 from aiogram import exceptions, Bot
+from aiohttp import web
 from loguru import logger
 
-from database.repositories import UserRepo
-from database.setup import create_engine, create_session_pool
+from tgbot_service.APIParser import APIParser
 from tgbot_service.config import get_config
 
+routes = web.RouteTableDef()
 
-async def send_message(bot: Bot, user_id: int, text: str) -> bool:
+MAX_MSG_RETRIES: int = 5
+
+
+async def send_message(bot: Bot, user_id: int, text: str, retry_counter: int = 0) -> bool:
     """
     Safely send message to the user.
 
     :param bot: Aiogram instance of the bot.
     :param user_id: The telegram ID of the recipient of the message.
     :param text: The text of message.
+    :param retry_counter: Current number of attempts of message sending.
     :return: True if message was successfully sent, False otherwise.
     """
     try:
@@ -27,7 +31,9 @@ async def send_message(bot: Bot, user_id: int, text: str) -> bool:
     except exceptions.TelegramRetryAfter as e:
         logger.error(f"Target [ID:{user_id}]: Flood limit is exceeded. Sleep {e.retry_after} seconds.")
         await asyncio.sleep(e.retry_after)
-        return await send_message(bot, user_id, text)
+        if retry_counter >= MAX_MSG_RETRIES:
+            return False
+        return await send_message(bot, user_id, text, retry_counter=retry_counter + 1)
     except exceptions.TelegramAPIError:
         logger.exception(f"Target [ID:{user_id}]: Failed")
     else:
@@ -36,25 +42,23 @@ async def send_message(bot: Bot, user_id: int, text: str) -> bool:
     return False
 
 
-async def get_user_ids_for_notification():
-    """ Returns list of user ids that should be notified. """
-    engine = create_engine(database_dsn=get_config().db.url)
-    session_pool = create_session_pool(engine=engine)
-    async with session_pool() as session:
-        user_ids = await UserRepo(session).get_ids_to_notify(datetime.utcnow().hour)
-    return user_ids
-
-
-async def notify_users():
+@routes.get("/tasks/tgbot/notify_users")
+async def notify_users(request: web.Request) -> web.Response:
     """ Send message to all users who must be notified about setting activity """
     bot = Bot(token=get_config().tg_bot.token.get_secret_value(), parse_mode="HTML")
-    user_ids = await get_user_ids_for_notification()
+    async with APIParser.create_client() as client:
+        user_ids = await APIParser(client).get_users_to_notify()
 
+    message_counter = 0
     try:
         for user_id in user_ids:
-            await send_message(bot, user_id, "It's time to set your activity! Type /set_activity command")
+            is_success = await send_message(
+                bot, user_id, "It's time to set your activity! Type /set_activity command"
+            )
+            message_counter += 1 if is_success else 0
             await asyncio.sleep(0.05)
     finally:
-        logger.info('Messages successful sent.')
+        logger.info(f'{message_counter} from {len(user_ids)} notifications was successfully sent.')
 
     await bot.session.close()
+    return web.Response(status=200, text="Notification successfully sent.")

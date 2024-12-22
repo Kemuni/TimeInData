@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List, Annotated, Optional
 
-from fastapi import APIRouter, Depends, status, Body, HTTPException
+from fastapi import APIRouter, Depends, status, Body, HTTPException, Response
 
 from api_service import schemas
 from api_service.database.repositories import DatabaseRepo
@@ -10,18 +10,26 @@ from api_service.dependencies import get_db
 router = APIRouter(prefix='/users', tags=['users'])
 
 
-@router.put('', status_code=status.HTTP_200_OK)
-async def create_or_update(user: schemas.UserBase, db: DatabaseRepo = Depends(get_db)):
-    await db.users.create_or_update(**user.model_dump())
+@router.get('/to_notify')
+async def get_users_to_notify(db: DatabaseRepo = Depends(get_db)) -> schemas.UsersToNotifyOut:
+    user_ids = await db.users.get_ids_to_notify(datetime.utcnow().hour) or []
+    return schemas.UsersToNotifyOut(user_ids=user_ids)
 
 
-@router.put('/{user_id}/notify_hours', status_code=status.HTTP_200_OK)
+@router.put('')
+async def create_or_update(user: schemas.UserBase, db: DatabaseRepo = Depends(get_db)) -> Response:
+    await db.users.create_or_update(**user.model_dump(by_alias=True))
+    return Response(status_code=status.HTTP_200_OK, content="User have been created or updated")
+
+
+@router.put('/{user_id}/notify_hours')
 async def update_notify_hours(
         user_id: int,
         notify_hours: Annotated[List[schemas.HourNumber], Body(embed=True)],
         db: DatabaseRepo = Depends(get_db)
-):
+) -> Response:
     await db.users.update_notify_hours(user_id, notify_hours)
+    return Response(status_code=status.HTTP_200_OK, content="User's notify hours has been updated")
 
 
 @router.get('/{user_id}/notify_hours')
@@ -30,7 +38,7 @@ async def get_notify_hours(user_id: int, db: DatabaseRepo = Depends(get_db)) -> 
     return schemas.UserNotifyHoursOut(notify_hours=notify_hours)
 
 
-@router.get('/{user_id}/activities/last', response_model_exclude={'user_id'})
+@router.get('/{user_id}/activities/last')
 async def get_last_activity(user_id: int, db: DatabaseRepo = Depends(get_db)) -> Optional[schemas.LastActivityOut]:
     last_activity = await db.users.get_last_activity(user_id)
     return schemas.LastActivityOut.model_validate(last_activity) if last_activity else None

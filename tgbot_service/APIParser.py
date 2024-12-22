@@ -28,6 +28,7 @@ class ActivityBaseIn:
 @dataclass
 class ActivityBaseOut:
     type: str
+    user_id: int
     time: str
 
 
@@ -38,12 +39,15 @@ class Activity(ActivityBaseOut):
 
 class APIParser:
     """ Class for interaction with our API service. """
-    HTTPS_PREFIX: str = f"http{'' if get_config().debug else 's'}://{get_config().api.domain}:{get_config().api.port}/"
-    PUT_USER_URI: str = HTTPS_PREFIX + "users"
-    PUT_USER_NOTIFY_HOURS_URI: str = HTTPS_PREFIX + "users/{user_id}/notify_hours"
-    GET_USER_NOTIFY_HOURS_URI: str = HTTPS_PREFIX + "users/{user_id}/notify_hours"
-    GET_USER_LAST_ACTIVITY_URI: str = HTTPS_PREFIX + "users/{user_id}/activities/last"
-    POST_USER_ACTIVITIES_URI: str = HTTPS_PREFIX + "users/{user_id}/activities"
+
+    API_DOMAIN: str = f"http{'' if get_config().debug else 's'}://{get_config().api.domain}:{get_config().api.port}"
+    GET_HEALTHCHECK_URI: str = API_DOMAIN + "/healthcheck"
+    PUT_USER_URI: str = API_DOMAIN + "/users"
+    GET_USERS_TO_NOTIFY_URI: str = API_DOMAIN + "/users/to_notify"
+    PUT_USER_NOTIFY_HOURS_URI: str = API_DOMAIN + "/users/{user_id}/notify_hours"
+    GET_USER_NOTIFY_HOURS_URI: str = API_DOMAIN + "/users/{user_id}/notify_hours"
+    GET_USER_LAST_ACTIVITY_URI: str = API_DOMAIN + "/users/{user_id}/activities/last"
+    POST_USER_ACTIVITIES_URI: str = API_DOMAIN + "/users/{user_id}/activities"
 
     DATETIME_FORMAT: str = '%Y-%m-%dT%H:%M:%S'
 
@@ -59,6 +63,22 @@ class APIParser:
             yield client
         finally:
             await client.aclose()
+
+    async def healthcheck(self) -> bool:
+        """ Check API service is working. """
+        response = await self.client.get(self.GET_HEALTHCHECK_URI, follow_redirects=True)
+        return response.status_code == 200
+
+    async def get_users_to_notify(self) -> List[int]:
+        """
+        Get list of users, that's need to notify in current UTC hour.
+        :return: List of user_id which have to be notified.
+        """
+        response = await self.client.get(self.GET_USERS_TO_NOTIFY_URI)
+        response.raise_for_status()
+        data = response.json()
+        return data["user_ids"]
+
 
     async def create_or_update_user(self, user_id: int, username: str, language: str) -> None:
         """

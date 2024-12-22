@@ -3,7 +3,7 @@ from functools import lru_cache
 from typing import Optional
 
 from loguru import logger
-from pydantic import SecretStr, RedisDsn
+from pydantic import RedisDsn
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -20,61 +20,19 @@ def get_base_model_config() -> SettingsConfigDict:
     )
 
 
-class APISettings(BaseSettings):
-    """
-    API configuration class.
-    This class holds the settings for communication with the API service.
-
-    Attributes
-    ----------
-    domain : str
-        The domain of API service.
-    port : port
-        The port of API service.
-    """
-    model_config = get_base_model_config() | SettingsConfigDict(env_prefix='API_')
-
-    domain: str = '127.0.0.1'
-    port: int = 8000
-
-
 class TgBotConfig(BaseSettings):
     """
     Telegram bot configuration class.
-    This class holds the settings for the bot.
-
-    Attributes
-    ----------
-    token : str
-        The token which we get from telegram BotFather.
-    use_redis : str
-        Boolean variable that indicates whether we are using redis.
+    This class holds the settings for the bot and it's webhook.
     """
     model_config = get_base_model_config() | SettingsConfigDict(env_prefix='TG_BOT_')
 
-    token: SecretStr
-    use_redis: bool = False
-    host: str
-    port: int = 8080
-
     task_set_activity_notification_url: str
 
-    webhook_path: str = '/webhook'
 
-
-class MessagesTextConfig(BaseSettings):
+class CeleryRedisConfig(BaseSettings):
     """
-    Message text configuration class.
-    This class holds status messages for user.
-    """
-    model_config = get_base_model_config() | SettingsConfigDict(env_prefix='MESSAGE_TEXT_')
-
-    error: str = "⚠️ Something went wrong. Try again later!"
-
-
-class RedisConfig(BaseSettings):
-    """
-    Redis configuration class.
+    Redis configuration class for Celery.
 
     Attributes
     ----------
@@ -89,13 +47,13 @@ class RedisConfig(BaseSettings):
     redis_path : str
         The path where Redis server is located.
     """
-    model_config = get_base_model_config() | SettingsConfigDict(env_prefix='REDIS_')
+    model_config = get_base_model_config() | SettingsConfigDict(env_prefix='CELERY_REDIS_')
 
     redis_user: Optional[str] = None
     redis_password: Optional[str] = None
     redis_port: int = 6379
     redis_host: str = 'localhost'
-    redis_path: str = '/0'
+    redis_path: str = '/1'
 
     @property
     def url(self) -> str:
@@ -118,12 +76,8 @@ class Config(BaseSettings):
     ----------
     tg_bot : TgBotConfig
         Holds the settings related to the Telegram Bot.
-    msg_texts : MessagesTextConfig
-        Holds the status messages for telegram bot.
-    api : APISettings
-        Holds the settings to communicate with API service.
-    redis : RedisConfig
-        Holds the settings specific to Redis.
+    celery_redis : RedisConfig
+        Holds the settings specific to Celery Redis.
     """
     model_config = get_base_model_config()
 
@@ -132,11 +86,7 @@ class Config(BaseSettings):
     tg_bot_domain: str
     tg_bot: TgBotConfig = TgBotConfig()
 
-    msg_texts: MessagesTextConfig = MessagesTextConfig()
-
-    api: APISettings = APISettings()
-
-    redis: RedisConfig = RedisConfig()
+    celery_redis: CeleryRedisConfig = CeleryRedisConfig()
 
 
 @lru_cache
