@@ -3,9 +3,9 @@ from typing import List, Annotated, Optional
 
 from fastapi import APIRouter, Depends, status, Body, HTTPException, Response
 
-from api_service import schemas
-from api_service.database.repositories import DatabaseRepo
-from api_service.dependencies import get_db
+import schemas
+from database.repositories import DatabaseRepo
+from dependencies import get_db
 
 router = APIRouter(prefix='/users', tags=['users'])
 

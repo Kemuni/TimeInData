@@ -7,8 +7,8 @@ from aiogram_dialog import DialogManager, Dialog, Window, StartMode
 from aiogram_dialog.widgets.kbd import Start, Column, Back
 from aiogram_dialog.widgets.text import Const, Format
 
-from tgbot_service.states.settings import SettingsDialogSG
-from tgbot_service.states.start import StartDialogSG
+from states.settings import SettingsDialogSG
+from states.start import StartDialogSG
 
 
 async def getter(event_from_user: types.User, **kwargs) -> Dict[str, Any]:

@@ -5,7 +5,7 @@ from pydantic import BaseModel, ConfigDict, field_serializer, Field
 from pydantic.functional_validators import AfterValidator
 from typing_extensions import Annotated
 
-from api_service.database.models import ActivityTypes
+from database.models import ActivityTypes
 
 
 def hour_validate(hour: int):

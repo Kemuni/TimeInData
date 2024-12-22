@@ -3,14 +3,14 @@ from contextlib import asynccontextmanager
 import uvicorn
 from fastapi import FastAPI
 
-from api_service.config import get_config
-from api_service.logger.log_conf import LOGGING_CONFIG
-from api_service.routers import routers_list
+from config import get_config
+from logger.log_conf import LOGGING_CONFIG
+from routers import routers_list
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    from api_service.database.session_manager import session_manager
+    from database.session_manager import session_manager
     session_manager.init()
     yield
     await session_manager.close()

@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
 
-from tgbot.config import get_config
+from config import get_config
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -33,7 +33,7 @@ target_metadata = Base.metadata
 
 
 
-config.set_main_option("sqlalchemy.url", str(get_config().db.dsn))
+config.set_main_option("sqlalchemy.url", get_config().db.url)
 
 
 def run_migrations_offline() -> None:

@@ -4,8 +4,8 @@ from aiogram import exceptions, Bot
 from aiohttp import web
 from loguru import logger
 
-from tgbot_service.APIParser import APIParser
-from tgbot_service.config import get_config
+from APIParser import APIParser
+from config import get_config
 
 routes = web.RouteTableDef()
 

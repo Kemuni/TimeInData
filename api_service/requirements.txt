@@ -1,0 +1,14 @@
+# API
+fastapi~=0.115.6
+uvicorn[standard]~=0.27.0
+
+# Config, settings and validating
+pydantic~=2.5.3
+pydantic-settings~=2.1.0
+
+# Logging
+loguru~=0.7.2
+
+# ORM and libs to work with various databases
+SQLAlchemy~=2.0.2
+alembic~=1.13.1

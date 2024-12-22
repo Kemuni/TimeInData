@@ -10,8 +10,8 @@ from aiogram_dialog.widgets.input import MessageInput
 from aiogram_dialog.widgets.kbd import Cancel, Checkbox
 from aiogram_dialog.widgets.text import Const, Format
 
-from tgbot_service.APIParser import APIParser, ActivityBaseIn, ActivityTypes
-from tgbot_service.states.set_activity import SetActivityDialogSG
+from APIParser import APIParser, ActivityBaseIn, ActivityTypes
+from states.set_activity import SetActivityDialogSG
 
 
 class ActivityFormatError(Exception):
@@ -169,7 +169,7 @@ router = Router(name=__name__)
 router.include_router(dialog)
 
 
-@router.message(Command('set_activities'))
+@router.message(Command('set_activity'))
 async def set_activities(message: types.Message, api: APIParser, dialog_manager: DialogManager):
     today = datetime.now()
     last_activity = await api.get_user_last_activity(message.from_user.id)

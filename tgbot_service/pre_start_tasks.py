@@ -5,7 +5,7 @@ from typing import Optional
 from loguru import logger
 from tenacity import after_log, before_log, retry, stop_after_attempt, wait_fixed
 
-from tgbot_service.APIParser import APIParser
+from APIParser import APIParser
 
 
 class UnableConnectToAPIError(Exception):

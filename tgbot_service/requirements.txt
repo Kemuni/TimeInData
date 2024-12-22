@@ -5,25 +5,13 @@ aiogram-dialog~=2.1.0
 # Async requests
 httpx~=0.27.0
 
-# API
-fastapi~=0.115.6
-uvicorn~=0.27.0
-pydantic~=2.5.3
 
 # Config and settings
+pydantic~=2.5.3
 pydantic-settings~=2.1.0
 
 # Logging
 loguru~=0.7.2
-
-# ORM and libs to work with various databases
-SQLAlchemy~=2.0.2
-alembic~=1.13.1
-redis~=5.0.1
-
-# Task queue
-celery~=5.3.6
-typing_extensions~=4.9.0
 
 # Prestart tasks
 tenacity~=9.0.0

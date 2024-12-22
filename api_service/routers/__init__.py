@@ -1,4 +1,4 @@
-from api_service.routers import users, healthcheck
+from . import healthcheck, users
 
 routers_list = [
     healthcheck.router,

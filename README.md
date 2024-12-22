@@ -37,10 +37,10 @@ time spending.
 ### How to run Celery Service
 1. Run Celery beat with
     ```bash
-   celery -A celery_service.tasks beat --loglevelINFO
+   celery -A celery_service.tasks beat --loglevel INFO
    ```
 2. Run Celery worker with
     ```bash
-    celery -A celery_service.tasks beat --loglevelINFO
+    celery -A celery_service.tasks beat --loglevel INFO
     ```
 

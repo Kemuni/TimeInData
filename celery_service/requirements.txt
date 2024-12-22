@@ -1,0 +1,12 @@
+# Requests
+requests~=2.32.3
+
+# Config and settings
+pydantic~=2.5.3
+pydantic-settings~=2.1.0
+
+# Logging
+loguru~=0.7.2
+
+# Task queue
+celery~=5.3.6

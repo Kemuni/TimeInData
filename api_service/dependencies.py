@@ -1,5 +1,5 @@
-from .database.session_manager import session_manager
-from .database.repositories import DatabaseRepo
+from database.session_manager import session_manager
+from database.repositories import DatabaseRepo
 
 
 async def get_db():

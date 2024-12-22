@@ -3,7 +3,7 @@ from aiogram import Router, types, Bot
 from aiogram.filters import ExceptionTypeFilter
 from loguru import logger
 
-from tgbot_service.config import get_config
+from config import get_config
 
 router = Router()
 

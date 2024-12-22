@@ -1,6 +1,5 @@
 import requests
-
-from celery_service.celery import app
+from celery_service.main import app
 from celery_service.config import get_config
 
 

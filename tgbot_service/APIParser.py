@@ -3,9 +3,10 @@ from contextlib import asynccontextmanager
 from typing import AsyncIterator, List, Optional
 
 import httpx
+from pydantic import Field
 from pydantic.dataclasses import dataclass
 
-from tgbot_service.config import get_config
+from config import get_config
 
 
 class ActivityTypes(enum.Enum):
@@ -28,7 +29,6 @@ class ActivityBaseIn:
 @dataclass
 class ActivityBaseOut:
     type: str
-    user_id: int
     time: str
 
 

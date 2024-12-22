@@ -1,10 +1,10 @@
 from typing import Optional, List, Sequence
 
-from sqlalchemy import update, select, ScalarResult
+from sqlalchemy import update, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from api_service import schemas
+import schemas
 from .func import utcnow
 from .models import User, Activity, Base
 

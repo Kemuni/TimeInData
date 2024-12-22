@@ -1,5 +1,6 @@
 from typing import Any
 
+
 LOGGING_CONFIG: dict[str, Any] = {
     "version": 1,
     "disable_existing_loggers": False,

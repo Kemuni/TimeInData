@@ -88,6 +88,8 @@ class Config(BaseSettings):
     """
     model_config = get_base_model_config()
 
+    debug: bool = 0
+
     api: APIConfig = APIConfig()
     db: DBConfig = DBConfig()
 
