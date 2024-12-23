@@ -40,7 +40,7 @@ class Activity(ActivityBaseOut):
 class APIParser:
     """ Class for interaction with our API service. """
 
-    API_DOMAIN: str = f"http{'' if get_config().debug else 's'}://{get_config().api.domain}:{get_config().api.port}"
+    API_DOMAIN: str = get_config().api_domain
     GET_HEALTHCHECK_URI: str = API_DOMAIN + "/healthcheck"
     PUT_USER_URI: str = API_DOMAIN + "/users"
     GET_USERS_TO_NOTIFY_URI: str = API_DOMAIN + "/users/to_notify"

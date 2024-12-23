@@ -14,28 +14,10 @@ def get_base_model_config() -> SettingsConfigDict:
         logger.warning('DEBUG MODE ON!')
 
     return SettingsConfigDict(
-        env_file='.env' if debug_mode else 'prod.env',
+        env_file='../.env' if debug_mode else '../prod.env',
         env_nested_delimiter='__',
         extra='ignore',
     )
-
-
-class APISettings(BaseSettings):
-    """
-    API configuration class.
-    This class holds the settings for communication with the API service.
-
-    Attributes
-    ----------
-    domain : str
-        The domain of API service.
-    port : port
-        The port of API service.
-    """
-    model_config = get_base_model_config() | SettingsConfigDict(env_prefix='API_')
-
-    domain: str = '127.0.0.1'
-    port: int = 8000
 
 
 class TgBotConfig(BaseSettings):
@@ -120,8 +102,6 @@ class Config(BaseSettings):
         Holds the settings related to the Telegram Bot.
     msg_texts : MessagesTextConfig
         Holds the status messages for telegram bot.
-    api : APISettings
-        Holds the settings to communicate with API service.
     redis : RedisConfig
         Holds the settings specific to Redis.
     """
@@ -134,7 +114,7 @@ class Config(BaseSettings):
 
     msg_texts: MessagesTextConfig = MessagesTextConfig()
 
-    api: APISettings = APISettings()
+    api_domain: str
 
     redis: RedisConfig = RedisConfig()
 
