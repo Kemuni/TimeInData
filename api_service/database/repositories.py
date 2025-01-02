@@ -1,12 +1,12 @@
-from typing import Optional, List, Sequence
+from typing import Optional, List, Sequence, Dict, Tuple
 
-from sqlalchemy import update, select
+from sqlalchemy import update, select, func, Row
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 import schemas
 from .func import utcnow
-from .models import User, Activity, Base
+from .models import User, Activity, Base, ActivityTypes
 
 
 class BaseRepo:
@@ -140,6 +140,7 @@ class UserRepo(BaseRepo):
     async def get_tz_delta(self, user_id: int) -> Optional[int]:
         """
         Get user notify hours from the database.
+
         :param user_id: The user's telegram ID.
         :return: User time zone delta or None.
         """
@@ -150,6 +151,22 @@ class UserRepo(BaseRepo):
 
         result = await self.session.execute(select_stmt)
         return result.scalar_one()
+
+    async def get_activities_summary(self, user_id: int) -> Sequence[Row[tuple[ActivityTypes, int]]]:
+        """
+        Get user's activities summary like [Activity, amount_of_hours].
+
+        :param user_id: The user's telegram ID.
+        :return: User's activities summary.
+        """
+        select_stmt = (
+            select(Activity.type, func.count(Activity.id))
+            .where(Activity.user_id == user_id)
+            .group_by(Activity.type)
+        )
+
+        result = await self.session.execute(select_stmt)
+        return result.all()
 
 
 class DatabaseRepo(BaseRepo):

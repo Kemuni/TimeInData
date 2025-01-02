@@ -37,6 +37,18 @@ class Activity(ActivityBaseOut):
     id: int
 
 
+@dataclass
+class ActivitySummary:
+    type_name: str
+    type_id: ActivityTypes
+    amount: int
+
+
+@dataclass
+class ActivitiesSummaryOut:
+    data: List[ActivitySummary]
+
+
 class APIParser:
     """ Class for interaction with our API service. """
 
@@ -50,6 +62,7 @@ class APIParser:
     GET_USER_TZ_DELTA_URI: str = API_DOMAIN + "/users/{user_id}/tz_delta"
     GET_USER_LAST_ACTIVITY_URI: str = API_DOMAIN + "/users/{user_id}/activities/last"
     POST_USER_ACTIVITIES_URI: str = API_DOMAIN + "/users/{user_id}/activities"
+    GET_USER_ACTIVITIES_SUMMARY_URI: str = API_DOMAIN + "/users/{user_id}/activities/summary"
 
     DATETIME_FORMAT: str = '%Y-%m-%dT%H:%M:%S'
 
@@ -172,3 +185,15 @@ class APIParser:
         }
         response = await self.client.post(self.POST_USER_ACTIVITIES_URI.format(user_id=user_id), json=activity_data)
         response.raise_for_status()
+
+    async def get_activities_summary(self, user_id: int) -> Optional[ActivitiesSummaryOut]:
+        """
+        Get information about amount of user's activities.
+
+        :param user_id: Telegram ID of user.
+        :return: Activities summary info.
+        """
+        response = await self.client.get(self.GET_USER_ACTIVITIES_SUMMARY_URI.format(user_id=user_id))
+        response.raise_for_status()
+        data = response.json()
+        return ActivitiesSummaryOut(**data) if data else None

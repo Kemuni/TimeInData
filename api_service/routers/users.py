@@ -81,3 +81,17 @@ async def get_time_zone_delta(
 ) -> schemas.UserTimeZoneDeltaOut:
     tz_delta = await db.users.get_tz_delta(user_id) or 0
     return schemas.UserTimeZoneDeltaOut(tz_delta=tz_delta)
+
+
+@router.get('/{user_id}/activities/summary')
+async def get_activity_summary(
+        user_id: schemas.TelegramUserId,
+        db: DatabaseRepo = Depends(get_db)
+) -> schemas.UserActivitiesSummaryOut:
+    summary = await db.users.get_activities_summary(user_id)
+    return schemas.UserActivitiesSummaryOut(
+        data=[
+            schemas.UserActivitySummary(type_id=activity_type, type_name=activity_type.name, amount=amount)
+            for activity_type, amount in summary
+        ]
+    )

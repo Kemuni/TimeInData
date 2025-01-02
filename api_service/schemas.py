@@ -26,6 +26,16 @@ class UserTimeZoneDeltaOut(BaseModel):
     tz_delta: TzDeltaNumber
 
 
+class UserActivitySummary(BaseModel):
+    type_name: str
+    type_id: ActivityTypes
+    amount: int
+
+
+class UserActivitiesSummaryOut(BaseModel):
+    data: List[UserActivitySummary]
+
+
 class UsersToNotifyOut(BaseModel):
     user_ids: List[int]
 

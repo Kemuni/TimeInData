@@ -172,7 +172,7 @@ dialog = Dialog(
         state=SetActivityDialogSG.start,
     ),
     Window(
-        Const('New activities saved!'),
+        Const('New activities saved! 🎉'),
         state=SetActivityDialogSG.finish,
     ),
 )
