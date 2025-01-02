@@ -1,23 +1,20 @@
 import operator
 from typing import Dict, Any, List
 
-from aiogram import Router
 from aiogram import types
-from aiogram.filters import Command
-from aiogram_dialog import DialogManager, Dialog, Window, StartMode
+from aiogram_dialog import DialogManager, Dialog, Window, ShowMode
 from aiogram_dialog.widgets.kbd import Checkbox, Multiselect, Group, Row, Cancel, Button, ManagedMultiselect
 from aiogram_dialog.widgets.text import Const, Format
 from loguru import logger
 
 from APIParser import APIParser
-from states.settings import SettingsDialogSG
-
+from states.settings import SetNotifyHoursSG
 
 NEED_EXAMPLE_BTN_ID: str = "need_example"
 HOURS_SELECTED_BTN_ID: str = "hours_select"
 
 
-async def getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, Any]:
+async def getter(dialog_manager: DialogManager, **_) -> Dict[str, Any]:
     return {
         NEED_EXAMPLE_BTN_ID: dialog_manager.find(NEED_EXAMPLE_BTN_ID).is_checked(),
         'hours': (
@@ -32,23 +29,23 @@ async def getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, Any]:
     }
 
 
-async def set_every_notify_hour(callback: types.CallbackQuery, button: Button, manager: DialogManager):
+async def set_every_notify_hour(_, __, manager: DialogManager):
     """ Set every hour from Multiselect widget """
     multi = manager.find(HOURS_SELECTED_BTN_ID)
     for hour in range(24):
         await multi.set_checked(hour, True)
 
 
-async def clear_notify_hours(callback: types.CallbackQuery, button: Button, manager: DialogManager):
+async def clear_notify_hours(_, __, manager: DialogManager):
     """ Clear every hour from Multiselect widget """
     multi: ManagedMultiselect = manager.find(HOURS_SELECTED_BTN_ID)
     await multi.reset_checked()
 
 
-async def save_settings(callback: types.CallbackQuery, button: Button, manager: DialogManager):
-    """ Save new user settings in the database and end dialog manager """
+async def save_notify_hours(callback: types.CallbackQuery, _, manager: DialogManager):
+    """ Save new user notify hours in the database and end dialog manager """
     if manager.is_preview():
-        await manager.done()
+        await manager.done(show_mode=ShowMode.SEND)
         return
 
     selected_hours: List[int] = manager.find(HOURS_SELECTED_BTN_ID).get_checked()
@@ -64,10 +61,10 @@ async def save_settings(callback: types.CallbackQuery, button: Button, manager: 
         f"I will send you notification in: {selected_hours_str}"
     )
 
-    await manager.done()
+    await manager.done(show_mode=ShowMode.SEND)
 
 
-async def on_start(start_data: Any, manager: DialogManager):
+async def on_start(_, manager: DialogManager):
     """ Set last saved user data for dialog from database """
     multi = manager.find(HOURS_SELECTED_BTN_ID)
     api: APIParser = manager.middleware_data['api']
@@ -80,7 +77,7 @@ async def on_start(start_data: Any, manager: DialogManager):
 dialog = Dialog(
     Window(
         Const(
-            "Firstly let's configure time for notification 🕣\n"
+            "Let's configure time for notification 🕣\n"
             "Please, tap the buttons with comfortable to you time below! 👇\n"
             "❗ Remember, that you will set activities for hours before selected."
         ),
@@ -124,22 +121,12 @@ dialog = Dialog(
             Button(
                 text=Const('Save 💾'),
                 id="save_settings",
-                on_click=save_settings,
+                on_click=save_notify_hours,
                 when='hours_selected',
             ),
         ),
         getter=getter,
-        state=SettingsDialogSG.time,
+        state=SetNotifyHoursSG.set_time,
     ),
     on_start=on_start,
 )
-
-
-router = Router(name=__name__)
-router.include_router(dialog)
-
-
-@router.message(Command('settings'))
-async def settings(message: types.Message, api: APIParser, dialog_manager: DialogManager):
-    """ Start settings dialog and transfer data about user's hours from database"""
-    await dialog_manager.start(SettingsDialogSG.time, mode=StartMode.RESET_STACK)

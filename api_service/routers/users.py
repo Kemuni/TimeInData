@@ -24,7 +24,7 @@ async def create_or_update(user: schemas.UserBase, db: DatabaseRepo = Depends(ge
 
 @router.put('/{user_id}/notify_hours')
 async def update_notify_hours(
-        user_id: int,
+        user_id: schemas.TelegramUserId,
         notify_hours: Annotated[List[schemas.HourNumber], Body(embed=True)],
         db: DatabaseRepo = Depends(get_db)
 ) -> Response:
@@ -33,20 +33,24 @@ async def update_notify_hours(
 
 
 @router.get('/{user_id}/notify_hours')
-async def get_notify_hours(user_id: int, db: DatabaseRepo = Depends(get_db)) -> schemas.UserNotifyHoursOut:
+async def get_notify_hours(user_id: schemas.TelegramUserId, db: DatabaseRepo = Depends(get_db)) -> schemas.UserNotifyHoursOut:
     notify_hours = await db.users.get_notify_hours(user_id) or []
     return schemas.UserNotifyHoursOut(notify_hours=notify_hours)
 
 
 @router.get('/{user_id}/activities/last')
-async def get_last_activity(user_id: int, db: DatabaseRepo = Depends(get_db)) -> Optional[schemas.LastActivityOut]:
+async def get_last_activity(user_id: schemas.TelegramUserId, db: DatabaseRepo = Depends(get_db)) -> Optional[schemas.LastActivityOut]:
     last_activity = await db.users.get_last_activity(user_id)
     return schemas.LastActivityOut.model_validate(last_activity) if last_activity else None
 
 
-@router.post('/{user_id}/activities', status_code=status.HTTP_201_CREATED)
+@router.post(
+    '/{user_id}/activities',
+    description='Creating new activities in UTC time.',
+    status_code=status.HTTP_201_CREATED,
+)
 async def add_activities(
-        user_id: int,
+        user_id: schemas.TelegramUserId,
         activities: Annotated[List[schemas.ActivityBase], Body(embed=True)],
         db: DatabaseRepo = Depends(get_db)
 ):
@@ -55,3 +59,25 @@ async def add_activities(
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                                 detail=f"Incorrect activity time. {activity.time} is invalid")
     await db.users.add_activities(user_id, activities)
+
+
+@router.put('/{user_id}/tz_delta')
+async def update_time_zone_delta(
+        user_id: schemas.TelegramUserId,
+        tz_delta: Annotated[
+            schemas.TzDeltaNumber, 
+            Body(embed=True),
+        ],
+        db: DatabaseRepo = Depends(get_db)
+) -> Response:
+    await db.users.update_tz_delta(user_id, tz_delta)
+    return Response(status_code=status.HTTP_200_OK, content="User's time zone delta has been updated")
+
+
+@router.get('/{user_id}/tz_delta')
+async def get_time_zone_delta(
+        user_id: schemas.TelegramUserId,
+        db: DatabaseRepo = Depends(get_db)
+) -> schemas.UserTimeZoneDeltaOut:
+    tz_delta = await db.users.get_tz_delta(user_id) or 0
+    return schemas.UserTimeZoneDeltaOut(tz_delta=tz_delta)

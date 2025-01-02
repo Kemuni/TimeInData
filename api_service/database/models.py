@@ -24,6 +24,7 @@ class User(Base):
     joined_at: Mapped[datetime] = mapped_column(TIMESTAMP, server_default=utcnow())
     last_activity: Mapped[datetime] = mapped_column(TIMESTAMP, server_default=utcnow())
     notify_hours: Mapped[List[int]] = mapped_column(ARRAY(SMALLINT), nullable=True)
+    time_zone_delta: Mapped[int] = mapped_column(SMALLINT, default=0)  # In hours. UTC+3 = 3. UTC-2 = -2
 
     activities: Mapped[List["Activity"]] = relationship(back_populates="user", cascade="all")
 

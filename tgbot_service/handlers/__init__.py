@@ -2,7 +2,7 @@ from . import start, settings, set_activity, errors
 
 routers_list = [
     start.router,
-    settings.router,
+    *settings.routers_list,
     set_activity.router,
     errors.router,
 ]

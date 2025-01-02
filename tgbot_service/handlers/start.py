@@ -7,11 +7,11 @@ from aiogram_dialog import DialogManager, Dialog, Window, StartMode
 from aiogram_dialog.widgets.kbd import Start, Column, Back
 from aiogram_dialog.widgets.text import Const, Format
 
-from states.settings import SettingsDialogSG
+from states.settings import SetNotifyHoursSG
 from states.start import StartDialogSG
 
 
-async def getter(event_from_user: types.User, **kwargs) -> Dict[str, Any]:
+async def getter(event_from_user: types.User, **_) -> Dict[str, Any]:
     return {
         "full_name": event_from_user.full_name,
     }
@@ -54,7 +54,7 @@ dialog = Dialog(
             Start(
                 Const("Let's try it! 🚩"),
                 id="to_user_settings",
-                state=SettingsDialogSG.time,
+                state=SetNotifyHoursSG.set_time,
                 mode=StartMode.RESET_STACK,
             ),
         ),
@@ -68,6 +68,6 @@ router.include_router(dialog)
 
 
 @router.message(CommandStart())
-async def start(message: types.Message, dialog_manager: DialogManager):
+async def start(_, dialog_manager: DialogManager):
     # it is important to reset stack because user wants to restart everything
     await dialog_manager.start(StartDialogSG.greeting, mode=StartMode.RESET_STACK)

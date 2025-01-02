@@ -71,7 +71,7 @@ class UserRepo(BaseRepo):
 
     async def update_notify_hours(self, user_id: int, new_hours: List[int]) -> None:
         """
-        Updated user notify hours in the database.
+        Update user notify hours in the database.
         :param user_id: The user's telegram ID.
         :param new_hours: The new user's hours to notify.
         """
@@ -121,6 +121,35 @@ class UserRepo(BaseRepo):
         await self.bulk_add(
             objs=[Activity(user_id=user_id, **i.model_dump()) for i in activities]
         )
+
+    async def update_tz_delta(self, user_id: int, tz_delta: int) -> None:
+        """
+        Update user time zone delta in the database.
+        :param user_id: The user's telegram ID.
+        :param tz_delta: The new user's time zone delta.
+        """
+        update_stmt = (
+            update(User)
+            .where(User.id == user_id)
+            .values(time_zone_delta=tz_delta)
+        )
+
+        await self.session.execute(update_stmt)
+        await self.session.commit()
+
+    async def get_tz_delta(self, user_id: int) -> Optional[int]:
+        """
+        Get user notify hours from the database.
+        :param user_id: The user's telegram ID.
+        :return: User time zone delta or None.
+        """
+        select_stmt = (
+            select(User.time_zone_delta)
+            .where(User.id == user_id)
+        )
+
+        result = await self.session.execute(select_stmt)
+        return result.scalar_one()
 
 
 class DatabaseRepo(BaseRepo):

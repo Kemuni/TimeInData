@@ -23,7 +23,7 @@ class ActivityTypes(enum.Enum):
 @dataclass
 class ActivityBaseIn:
     type: int
-    time: str
+    time: str = Field(..., title='Activity time in "%Y-%m-%dT%H:%M:%S" format')
 
 
 @dataclass
@@ -45,7 +45,9 @@ class APIParser:
     PUT_USER_URI: str = API_DOMAIN + "/users"
     GET_USERS_TO_NOTIFY_URI: str = API_DOMAIN + "/users/to_notify"
     PUT_USER_NOTIFY_HOURS_URI: str = API_DOMAIN + "/users/{user_id}/notify_hours"
+    PUT_USER_TZ_DELTA_URI: str = API_DOMAIN + "/users/{user_id}/tz_delta"
     GET_USER_NOTIFY_HOURS_URI: str = API_DOMAIN + "/users/{user_id}/notify_hours"
+    GET_USER_TZ_DELTA_URI: str = API_DOMAIN + "/users/{user_id}/tz_delta"
     GET_USER_LAST_ACTIVITY_URI: str = API_DOMAIN + "/users/{user_id}/activities/last"
     POST_USER_ACTIVITIES_URI: str = API_DOMAIN + "/users/{user_id}/activities"
 
@@ -109,6 +111,19 @@ class APIParser:
         response = await self.client.put(self.PUT_USER_NOTIFY_HOURS_URI.format(user_id=user_id), json=user_data)
         response.raise_for_status()
 
+    async def update_user_time_zone_delta(self, user_id: int, new_tz_delta: int) -> None:
+        """
+        Update user time zone delta.
+
+        :param user_id: Telegram ID of user.
+        :param new_tz_delta: New timezone delta.
+        """
+        user_data = {
+            "tz_delta": new_tz_delta
+        }
+        response = await self.client.put(self.PUT_USER_TZ_DELTA_URI.format(user_id=user_id), json=user_data)
+        response.raise_for_status()
+
     async def get_user_notify_hours(self, user_id: int) -> List[int]:
         """
         Get user hours for notifications.
@@ -120,6 +135,18 @@ class APIParser:
         response.raise_for_status()
         data = response.json()
         return data["notify_hours"]
+
+    async def get_user_time_zone_delta(self, user_id: int) -> int:
+        """
+        Get hours delta of time zone of user. For example, if user from Moscow, means UTC+3, method will return 3.
+
+        :param user_id: Telegram ID of user.
+        :return: Hours delta of time zone.
+        """
+        response = await self.client.get(self.GET_USER_TZ_DELTA_URI.format(user_id=user_id))
+        response.raise_for_status()
+        data = response.json()
+        return data["tz_delta"]
 
     async def get_user_last_activity(self, user_id: int) -> Optional[Activity]:
         """

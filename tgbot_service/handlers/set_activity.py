@@ -1,5 +1,5 @@
-from datetime import datetime
-from typing import Dict, Any, List, Tuple
+from datetime import datetime, timedelta
+from typing import Dict, Any, List, Optional, Union, Iterator
 
 from aiogram import Router
 from aiogram import types
@@ -10,7 +10,7 @@ from aiogram_dialog.widgets.input import MessageInput
 from aiogram_dialog.widgets.kbd import Cancel, Checkbox
 from aiogram_dialog.widgets.text import Const, Format
 
-from APIParser import APIParser, ActivityBaseIn, ActivityTypes
+from APIParser import APIParser, ActivityBaseIn, ActivityTypes, Activity
 from states.set_activity import SetActivityDialogSG
 
 
@@ -31,42 +31,49 @@ async def getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, Any]:
     }
 
 
-def parse_hours_range(hour_str: str) -> range:
+def parse_hours_range(hour_str: str) -> Union[Iterator[int], range]:
     """
     Parse hours range from text format.
-    For example: hour_str="12-15" -> return range(12, 16); hour_str="12" -> return range(12, 13);
+    For example: hour_str="12-15" -> return range(12, 16); "12" -> return [12]; "23-3" -> return [23, 00, 01, 02]
     :param hour_str: String format of hour. Example: "12-15" or "12".
-    :return: Range of hours.
+    :return: Range or iterator of hours.
     """
-    if '-' in hour_str:
-        if hour_str.count('-') > 1:
+    if '-' not in hour_str:
+        hour = int(hour_str)
+        if hour >= 24:
             raise ActivityFormatError(
-                '⚠️ Wrong hours format. Too many "-". Try again!'
+                f'⚠️ Hour cannot be more than 23. Try again!'
             )
-        from_hour, to_hour = list(map(int, hour_str.split('-')))
-        if from_hour >= to_hour or to_hour >= 24:
-            raise ActivityFormatError(
-                f'⚠️ Wrong hours format. Period {from_hour}-{to_hour} is invalid. Try again!'
-            )
-        return range(from_hour, to_hour + 1)
+        return range(hour, hour + 1)  # "12" = [12]
 
-    hour = int(hour_str)
-    if hour >= 24:
+    if hour_str.count('-') > 1:
         raise ActivityFormatError(
-            f'⚠️ Hour cannot be more than 23. Try again!'
+            '⚠️ Wrong hours format. Too many "-". Try again!'
         )
-    return range(hour, hour + 1)
+
+    # Parsing hours range if we have '-' symbol
+    from_hour, to_hour = list(map(int, hour_str.split('-')))
+    if any(i >= 24 for i in [from_hour, to_hour]) or from_hour == to_hour:
+        raise ActivityFormatError(
+            f'⚠️ Wrong hours format. Period {from_hour}-{to_hour} is invalid. Try again!'
+        )
+
+    if from_hour > to_hour:  # "23-3" = [23, 00, 01, 02]
+        return (i % 24 for i in range(from_hour, 24 + to_hour + 1))
+    return range(from_hour, to_hour + 1)  # "13-16" = [13, 14, 15]
 
 
-def parse_activity_from_string(activity_row: str, hours_to_submit: set[int], user_id: int) \
-        -> Tuple[List[ActivityBaseIn], set[int]]:
+def parse_activity_from_string(
+        activity_row: str, hours_to_submit: set[int], tz_delta: int, start_date: datetime
+) -> List[ActivityBaseIn]:
     """
     Parse activity from hour and activity string format. Return list of activities objects and new list of hours to
     submit.
 
     :param activity_row: String in format like "<time> <activity_type>" or "<from_time>-<to_time> <activity_type>",
     :param hours_to_submit: Hours, that user have to submit with activity.
-    :param user_id: Telegram user ID.
+    :param tz_delta: User's delta of time zone (i.e. UTC+3 = 3, UTC-2 = -2).
+    :param start_date: Datetime when user start dialog and our program calculate `hours_to_submit`.
     :return: Return list of activities objects and new list of hours to submit.
     """
     # Validate and parse data from text given
@@ -85,9 +92,9 @@ def parse_activity_from_string(activity_row: str, hours_to_submit: set[int], use
             f'Try again!"'
         )
 
-    # Create new activities objects and last hour validation
-    today = datetime.now()
-    activities = []
+    # Create new activities objects
+    start_date = datetime(start_date.year, start_date.month, start_date.day, start_date.hour)
+    activities: List[ActivityBaseIn] = []
     for hour in parse_hours_range(hour_str):
         if hour not in hours_to_submit:
             raise ActivityFormatError(
@@ -98,22 +105,25 @@ def parse_activity_from_string(activity_row: str, hours_to_submit: set[int], use
         activities.append(
             ActivityBaseIn(
                 type=ActivityTypes[activity.upper()].value,
-                time=datetime(today.year, today.month, today.day, hour).strftime(APIParser.DATETIME_FORMAT),
+                time=(start_date - timedelta(hours=tz_delta - hour)).strftime(APIParser.DATETIME_FORMAT),  # To UTC format
             )
         )
 
-    return activities, hours_to_submit
+    return activities
 
 
-async def process_message(message: types.Message, msg_input: MessageInput, manager: DialogManager):
+async def process_message(message: types.Message, _, manager: DialogManager):
     """ Get message and create activity from data given in user's message """
+    # Validating user message and converting it into a list of activities
     hours_to_submit: set[int] = set(manager.start_data['hours_to_submit'])
+    tz_delta: int = manager.start_data['tz_delta']
+    start_date: datetime = manager.start_data['start_date']
+
     activities: List[ActivityBaseIn] = []
     activity_items = message.text.strip().split('\n')
     try:
         for activity_row in activity_items:
-            new_activities, hours_to_submit = parse_activity_from_string(activity_row, hours_to_submit,
-                                                                         message.from_user.id)
+            new_activities = parse_activity_from_string(activity_row, hours_to_submit, tz_delta, start_date)
             activities.extend(new_activities)
     except ActivityFormatError as e:
         await message.reply(str(e))
@@ -123,6 +133,7 @@ async def process_message(message: types.Message, msg_input: MessageInput, manag
         await message.reply('⚠️ You have to set activity for all hours. Try again!')
         return
 
+    # Sending user's activities to our API service
     api: APIParser = manager.middleware_data['api']
     await api.add_user_activities(message.from_user.id, activities)
 
@@ -135,7 +146,7 @@ dialog = Dialog(
             'Now is time to set your activity for last hour(s)! 🕣'
         ),
         Format(
-            'You need to write your activity for {hours_to_submit_str} 📝'
+            '📝 You need to write your activity for {hours_to_submit_str}'
         ),
         Const(
             f"\n📌 <b>Available activities:</b> {AVAILABLE_ACTIVITIES_STR}",
@@ -151,6 +162,7 @@ dialog = Dialog(
         Checkbox(
             checked_text=Const('Hide available activities 📌'),
             unchecked_text=Const('Show available activities 📌'),
+            default=True,
             id=SHOW_ACTIVITIES_BTN_ID,
         ),
         Cancel(
@@ -169,13 +181,38 @@ router = Router(name=__name__)
 router.include_router(dialog)
 
 
+def get_hours_to_submit(last_activity: Optional[Activity] = None, to_date: Optional[datetime] = None) -> list[int]:
+    """
+    Receive last activity object and return list of hours that user can fill via activity.
+    :param last_activity: Object of last user's activity.
+    :param to_date: Deadline date to check hours without activity.
+    :return: List of hours that user can fill via activity.
+    """
+    today = to_date or datetime.utcnow()
+    if last_activity is None:  # If user is new for us - let him fill only today's hour
+        return [hour for hour in range(0, today.hour)]
+
+    # Otherwise, let user set activity to all 24 hours gap, including yesterday
+    last_activity_time = datetime.strptime(last_activity.time, APIParser.DATETIME_FORMAT)
+    if last_activity_time.date() == today.date():
+        return [hour for hour in range(last_activity_time.hour + 1, today.hour)]
+
+    if today.date() - last_activity_time.date() <= timedelta(days=1):
+        from_hour = last_activity_time.hour + 1
+    else:
+        from_hour = today.hour
+
+    return [hour % 24 for hour in range(from_hour, 24 + today.hour)]
+
+
 @router.message(Command('set_activity'))
 async def set_activities(message: types.Message, api: APIParser, dialog_manager: DialogManager):
-    today = datetime.now()
+    tz_delta = await api.get_user_time_zone_delta(message.from_user.id)
     last_activity = await api.get_user_last_activity(message.from_user.id)
-    last_activity_time = datetime.strptime(last_activity.time, APIParser.DATETIME_FORMAT)
-    first_hour_to_set = last_activity_time.hour + 1 if last_activity and last_activity_time.day == today.day else 0
-    hours_to_submit = [hour for hour in range(first_hour_to_set, today.hour)]
+
+    # Provide date to dialog for excepting errors with activity when user start the dialog in time like 17:59
+    utc_today = datetime.utcnow()
+    hours_to_submit = [(hour + tz_delta) % 24 for hour in get_hours_to_submit(last_activity, to_date=utc_today)]
 
     if hours_to_submit:
         await dialog_manager.start(
@@ -183,6 +220,8 @@ async def set_activities(message: types.Message, api: APIParser, dialog_manager:
             mode=StartMode.RESET_STACK,
             data={
                 'hours_to_submit': hours_to_submit,
+                'tz_delta': tz_delta,
+                'start_date': utc_today,
             }
         )
     else:
