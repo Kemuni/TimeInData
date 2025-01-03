@@ -20,11 +20,12 @@ class APIConnectionMiddleware(BaseMiddleware):
         """ Create APIParser instance and pass it to the handler. Also update user info via API. """
         async with APIParser.create_client() as client:
             api = APIParser(client)
-            await api.create_or_update_user(
+            is_new_user = await api.create_or_update_user(
                 user_id=event.from_user.id,
                 language=event.from_user.language_code,
                 username=event.from_user.username,
             )
 
             data['api'] = api
+            data['is_new_user'] = is_new_user
             return await handler(event, data)

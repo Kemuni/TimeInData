@@ -1,14 +1,22 @@
 from typing import Dict, Any
 
-from aiogram import Router
+from aiogram import Router, F
 from aiogram import types
-from aiogram.filters import CommandStart
+from aiogram.filters import Command
 from aiogram_dialog import DialogManager, Dialog, Window, StartMode
-from aiogram_dialog.widgets.kbd import Start, Column, Back
+from aiogram_dialog.widgets.kbd import Start, Column, Back, Cancel
 from aiogram_dialog.widgets.text import Const, Format
 
-from states.settings import SetNotifyHoursSG
+from states.set_activity import SetActivityDialogSG
+from states.settings import SetNotifyHoursSG, SettingsDialogSG
 from states.start import StartDialogSG
+
+TO_BOT_DESCRIPTION_BTN_ID = 'to_bot_description_btn_id'
+TO_USER_SETTINGS_BTN_ID = 'to_user_settings_btn_id'
+
+TO_SETTINGS_BTN_ID = 'to_settings_btn_id'
+TO_SET_ACTIVITIES_BTN_ID = 'to_set_activities_btn_id'
+EXIT_BTN_ID = 'exit_btn_id'
 
 
 async def getter(event_from_user: types.User, **_) -> Dict[str, Any]:
@@ -28,7 +36,7 @@ dialog = Dialog(
             "If you want to know more about it, tap on the button at the bottom! 👇"
         ),
         Start(
-            Const('Tell me more!'), id="to_bot_description", state=StartDialogSG.description,
+            Const('Tell me more!'), id=TO_BOT_DESCRIPTION_BTN_ID, state=StartDialogSG.description,
         ),
         getter=getter,
         state=StartDialogSG.greeting,
@@ -53,21 +61,51 @@ dialog = Dialog(
             Back(Const("⬅️ Back")),
             Start(
                 Const("Let's try it! 🚩"),
-                id="to_user_settings",
+                id=TO_USER_SETTINGS_BTN_ID,
                 state=SetNotifyHoursSG.set_time,
                 mode=StartMode.RESET_STACK,
             ),
         ),
         state=StartDialogSG.description,
     ),
+    Window(
+        Format(
+            "Hello, {full_name}! 👋\n"
+        ),
+        Const(
+            "I am here to help you with time management 🕣 \n\n"
+            "Tap on the button below! 👇"
+        ),
+        Column(
+            Start(
+                Const("Settings ⚙️"),
+                id=TO_SETTINGS_BTN_ID,
+                state=SettingsDialogSG.main_menu,
+            ),
+            Start(
+                Const("Set activity 🚩"),
+                id=TO_SET_ACTIVITIES_BTN_ID,
+                state=SetActivityDialogSG.start,
+            ),
+            Cancel(
+                Const("Exit"),
+                id=EXIT_BTN_ID,
+            ),
+        ),
+        getter=getter,
+        state=StartDialogSG.menu,
+    ),
 )
 
 
-router = Router()
+router = Router(name=__name__)
+dialog.message.filter(~F.text.startswith('/'))
 router.include_router(dialog)
 
 
-@router.message(CommandStart())
-async def start(_, dialog_manager: DialogManager):
-    # it is important to reset stack because user wants to restart everything
-    await dialog_manager.start(StartDialogSG.greeting, mode=StartMode.RESET_STACK)
+@router.message(Command(commands=['start', 'menu']))
+async def start(_, dialog_manager: DialogManager, is_new_user: bool):
+    if is_new_user:
+        await dialog_manager.start(StartDialogSG.greeting, mode=StartMode.RESET_STACK)
+    else:
+        await dialog_manager.start(StartDialogSG.menu, mode=StartMode.RESET_STACK)

@@ -49,6 +49,15 @@ class ActivitiesSummaryOut:
     data: List[ActivitySummary]
 
 
+@dataclass
+class UserOut:
+    id: int
+    username: str
+    language: str
+    notify_hours: Optional[List[int]]
+    tz_delta: int
+
+
 class APIParser:
     """ Class for interaction with our API service. """
 
@@ -95,13 +104,14 @@ class APIParser:
         return data["user_ids"]
 
 
-    async def create_or_update_user(self, user_id: int, username: str, language: str) -> None:
+    async def create_or_update_user(self, user_id: int, username: str, language: str) -> bool:
         """
-        Create user or update user's data.
+        Create user or update user's data. Return bool is_new_user.
 
         :param user_id: Telegram ID of user.
         :param username: Telegram user's username.
         :param language: Telegram user's language.
+        :return: True if it is new user, false otherwise.
         """
         user_data = {
             "id": user_id,
@@ -110,6 +120,9 @@ class APIParser:
         }
         response = await self.client.put(self.PUT_USER_URI, json=user_data)
         response.raise_for_status()
+        api_user = UserOut(**response.json())
+
+        return response.status_code == 201 or api_user.notify_hours is None
 
     async def update_user_notify_hours(self, user_id: int, notify_hours: List[int]) -> None:
         """

@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import List, Annotated, Optional
 
 from fastapi import APIRouter, Depends, status, Body, HTTPException, Response
+from starlette.responses import JSONResponse
 
 import schemas
 from database.repositories import DatabaseRepo
@@ -16,10 +17,13 @@ async def get_users_to_notify(db: DatabaseRepo = Depends(get_db)) -> schemas.Use
     return schemas.UsersToNotifyOut(user_ids=user_ids)
 
 
-@router.put('')
-async def create_or_update(user: schemas.UserBase, db: DatabaseRepo = Depends(get_db)) -> Response:
-    await db.users.create_or_update(**user.model_dump(by_alias=True))
-    return Response(status_code=status.HTTP_200_OK, content="User have been created or updated")
+@router.put('', response_model=schemas.UserOut)
+async def create_or_update(user: schemas.UserBase, db: DatabaseRepo = Depends(get_db)):
+    db_user, is_created = await db.users.create_or_update(**user.model_dump(by_alias=True))
+    return JSONResponse(
+        status_code=status.HTTP_201_CREATED if is_created else status.HTTP_200_OK,
+        content=schemas.UserOut.model_validate(db_user, from_attributes=True).model_dump(by_alias=True),
+    )
 
 
 @router.put('/{user_id}/notify_hours')

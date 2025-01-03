@@ -3,7 +3,7 @@ from typing import List
 
 from annotated_types import Gt, Lt
 from pydantic import BaseModel, ConfigDict, field_serializer, Field
-from typing_extensions import Annotated
+from typing_extensions import Annotated, Optional
 
 from database.models import ActivityTypes
 
@@ -24,6 +24,12 @@ class UserNotifyHoursOut(BaseModel):
 
 class UserTimeZoneDeltaOut(BaseModel):
     tz_delta: TzDeltaNumber
+
+
+class UserOut(UserBase):
+    id: int
+    notify_hours: Optional[List[HourNumber]] = None
+    time_zone_delta: Optional[TzDeltaNumber] = Field(None, serialization_alias="tz_delta")
 
 
 class UserActivitySummary(BaseModel):

@@ -40,13 +40,15 @@ class UserRepo(BaseRepo):
         result = await self.session.execute(get_stmt)
         return result.scalars().all()
 
-    async def create_or_update(self, user_id: int, language: str, username: Optional[str] = None) -> User:
+    async def create_or_update(self, user_id: int, language: str, username: Optional[str] = None) -> Tuple[User, bool]:
         """
-        Creates or updates a new user in the database. Return user.
+        Creates or updates a new user in the database. Return user and is_created bool.
         :param user_id: The user's telegram ID.
         :param language: The user's language.
         :param username: The user's username. It's an optional parameter.
+        :return: The User model and bool is_created, True if it is new user, otherwise False.
         """
+        is_created_column = (User.joined_at == User.last_activity).label("is_created")
         insert_stmt = (
             insert(User)
             .values(
@@ -62,12 +64,19 @@ class UserRepo(BaseRepo):
                     last_activity=utcnow(),
                 ),
             )
-            .returning(User)
+            .returning(
+                User,
+                is_created_column
+            )
         )
 
         result = await self.session.execute(insert_stmt)
         await self.session.commit()
-        return result.scalar_one()
+
+        user, is_created = result.one()
+        await self.session.refresh(user)
+
+        return user, is_created
 
     async def update_notify_hours(self, user_id: int, new_hours: List[int]) -> None:
         """

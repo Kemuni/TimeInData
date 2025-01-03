@@ -1,4 +1,4 @@
-from aiogram import Router
+from aiogram import Router, F
 from aiogram.filters import Command
 from aiogram_dialog import DialogManager, Dialog, Window, StartMode
 from aiogram_dialog.widgets.kbd import Row, Cancel, Start, Column
@@ -38,6 +38,9 @@ dialog = Dialog(
 
 
 router = Router(name=__name__)
+set_notify_hours_dialog.dialog.message.filter(~F.text.startswith('/'))
+set_time_zone_dialog.dialog.message.filter(~F.text.startswith('/'))
+dialog.message.filter(~F.text.startswith('/'))
 router.include_router(set_notify_hours_dialog.dialog)
 router.include_router(set_time_zone_dialog.dialog)
 router.include_router(dialog)
