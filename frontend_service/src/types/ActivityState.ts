@@ -1,8 +1,7 @@
 import { ActivityType } from "./ActivityType.ts";
 
 
-export default interface ActivityBtnState {
+export default interface ActivityState {
   date: Date,
   activity?: ActivityType | undefined,
-  isSelected?: boolean | undefined,
 }

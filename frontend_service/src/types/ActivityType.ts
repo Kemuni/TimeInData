@@ -22,6 +22,18 @@ export enum ActivityType {
 }
 
 
+export enum ActivityIntType {
+  Sleep,
+  Work,
+  Study,
+  Family,
+  Friends,
+  Passive,
+  Sport,
+  Games,
+}
+
+
 export const activityToIcon: { [key in ActivityType]: FC } = {
   [ActivityType.Sleep]: Icon24NightMode,
   [ActivityType.Work]: Icon24Suitcase,
