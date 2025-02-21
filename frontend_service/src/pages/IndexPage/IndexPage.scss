@@ -1,0 +1,12 @@
+article {
+  section {
+    background: var(--tgui--bg_color);
+    padding: 8px 16px;
+    margin: 0 0 6px 0;
+    border-radius: 10px;
+
+    & > *:not(:last-child) {
+      margin-bottom: 8px;
+    }
+  }
+}
