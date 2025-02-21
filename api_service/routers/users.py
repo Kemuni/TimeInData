@@ -58,8 +58,10 @@ async def add_activities(
         activities: Annotated[List[schemas.ActivityBase], Body(embed=True)],
         db: DatabaseRepo = Depends(get_db)
 ):
+    # TODO проверку на то, что активности на данное время уже созданы
     for activity in activities:
-        if activity.time > datetime.now():
+        activity.time = activity.time.replace(tzinfo=None)
+        if activity.time.timestamp() > datetime.utcnow().timestamp():
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                                 detail=f"Incorrect activity time. {activity.time} is invalid")
     await db.users.add_activities(user_id, activities)

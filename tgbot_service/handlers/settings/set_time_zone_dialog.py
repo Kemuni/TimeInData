@@ -19,7 +19,7 @@ async def getter(dialog_manager: DialogManager, **_):
     counter_value = dialog_manager.find(COUNTER_BTN_ID).get_value()
     today = datetime.utcnow()
     return {
-        "user_time_str": f"{(today.hour + counter_value) % 24}:{today.minute}"
+        "user_time_str": f"{(today.hour + counter_value) % 24}:{today.minute:01d}"
     }
 
 

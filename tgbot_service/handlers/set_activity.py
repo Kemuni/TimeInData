@@ -233,7 +233,7 @@ router.callback_query.filter(~F.is_new_user)
 router.include_router(dialog)
 
 
-@router.message(Command('set_activity'))
+@router.message(Command('set_activity', 'set_activities'))
 async def set_activity(_, dialog_manager: DialogManager):
     await dialog_manager.start(
         SetActivityDialogSG.start,
