@@ -216,6 +216,7 @@ celerybeat.pid
 
 # Environments
 frontend_service/.env
+.env
 .venv
 env/
 venv/
