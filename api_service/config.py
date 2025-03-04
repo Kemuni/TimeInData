@@ -32,17 +32,17 @@ class DBConfig(BaseSettings):
         The password used to authenticate with the database.
     user : str
         The username used to authenticate with the database.
-    database : str
+    db : str
         The name of the database.
     port : int
         The port where the database server is listening.
     """
-    model_config = get_base_model_config() | SettingsConfigDict(env_prefix='API_DB_')
+    model_config = get_base_model_config() | SettingsConfigDict(env_prefix='POSTGRES_')
 
     user: str = 'postgres'
     password: str = 'postgres'
-    database: str = 'TimeInDataDB'
-    host: str = 'localhost'
+    db: str = 'TimeInDataDB'
+    server: str = 'localhost'
     port: int = 5432
 
     @property
@@ -52,9 +52,9 @@ class DBConfig(BaseSettings):
             scheme="postgresql+asyncpg",
             username=self.user,
             password=self.password,
-            host=self.host,
+            host=self.server,
             port=self.port,
-            path=self.database,
+            path=self.db,
         ))
 
 
@@ -73,6 +73,7 @@ class APIConfig(BaseSettings):
 
     host: str = '127.0.0.1'
     port: int = 8000
+    workers: int | None = None
 
 
 class Config(BaseSettings):

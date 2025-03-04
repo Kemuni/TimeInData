@@ -9,9 +9,9 @@ from aiohttp import web
 from loguru import logger
 from tenacity import RetryError
 
-from logger.logger import LoggerCustomizer
 from config import get_config
 from handlers import routers_list
+from logger.logger import LoggerCustomizer
 from middlewares.api_connection_middleware import APIConnectionMiddleware
 from pre_start_tasks import check_api_service_connection
 from tasks import task_routes_list

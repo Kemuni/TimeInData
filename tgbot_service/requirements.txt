@@ -5,6 +5,8 @@ aiogram-dialog~=2.1.0
 # Async requests
 httpx~=0.27.0
 
+# Cache
+redis~=5.2.1
 
 # Config and settings
 pydantic~=2.5.3

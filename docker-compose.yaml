@@ -1,0 +1,128 @@
+services:
+  db:
+    image: postgres:17
+    command: "postgres -c listen_addresses=*"
+    restart: always
+    volumes:
+      - db-volume:/var/lib/postgresql/data/pgdata
+    env_file:
+      - .env
+    ports:
+      - "5432:5432"
+    environment:
+      - PGDATA=/var/lib/postgresql/data/pgdata
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
+      - POSTGRES_USER=${POSTGRES_USER?Variable not set}
+      - POSTGRES_DB=${POSTGRES_DB?Variable not set}
+
+  api-prestart:
+    container_name: api-prestart
+    image: api-image
+    working_dir: /app/api
+    depends_on:
+      - db
+    command: alembic upgrade head
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_SERVER=db
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER?Variable not set}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
+
+  api:
+    image: api-image
+    restart: always
+    volumes:
+      - api-logs:/logs
+    networks:
+      - traefik-public
+      - default
+    depends_on:
+      - db
+    env_file:
+      - .env
+    environment:
+      - DEBUG=0
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - API_WORKERS=2
+      - POSTGRES_SERVER=db
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER?Variable not set}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
+    ports:
+      - "8000:8000"
+    build:
+      context: .
+      dockerfile: api_service/Dockerfile
+
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik-public
+      - traefik.constraint-label=traefik-public
+
+      - traefik.http.services.api-project-api.loadbalancer.server.port=8000
+
+      - traefik.http.routers.api-project-api-http.rule=Host(`api.${DOMAIN?Variable not set}`)
+      - traefik.http.routers.api-project-api-http.entrypoints=http
+
+      - traefik.http.routers.api-project-api-https.rule=Host(`api.${DOMAIN?Variable not set}`)
+      - traefik.http.routers.api-project-api-https.entrypoints=https
+      - traefik.http.routers.api-project-api-https.tls=true
+      - traefik.http.routers.api-project-api-https.tls.certresolver=le
+
+      # Enable redirection for HTTP and HTTPS
+      - traefik.http.routers.api-project-api-http.middlewares=https-redirect
+
+  tg-bot:
+    image: tgbot-image
+    restart: on-failure
+    networks:
+      - traefik-public
+      - default
+    depends_on:
+      - db
+    env_file:
+      - .env
+    environment:
+      - DEBUG=0
+      - API_DOMAIN=https://api.${DOMAIN}
+      - TG_BOT_DOMAIN=https://tgbot.${DOMAIN}
+      - TG_BOT_HOST=0.0.0.0
+      - TG_BOT_PORT=8080
+    ports:
+      - "8080:8080"
+    build:
+      context: .
+      dockerfile: tgbot_service/Dockerfile
+
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik-public
+      - traefik.constraint-label=traefik-public
+
+      - traefik.http.services.tg-bot-project.loadbalancer.server.port=8080
+
+      - traefik.http.routers.tg-bot-project-http.rule=Host(`tgbot.${DOMAIN?Variable not set}`)
+      - traefik.http.routers.tg-bot-project-http.entrypoints=http
+
+      - traefik.http.routers.tg-bot-project-https.rule=Host(`tgbot.${DOMAIN?Variable not set}`)
+      - traefik.http.routers.tg-bot-project-https.entrypoints=https
+      - traefik.http.routers.tg-bot-project-https.tls=true
+      - traefik.http.routers.tg-bot-project-https.tls.certresolver=le
+
+      # Enable redirection for HTTP and HTTPS
+      - traefik.http.routers.tg-bot-project-http.middlewares=https-redirect
+
+
+volumes:
+  db-volume:
+  api-logs:
+
+
+networks:
+  traefik-public:
+    external: true
