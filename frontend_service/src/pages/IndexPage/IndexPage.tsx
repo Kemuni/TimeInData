@@ -1,14 +1,16 @@
-import {FC, useEffect, useReducer} from "react";
-import {List, Placeholder, Subheadline,} from "@telegram-apps/telegram-ui";
+import {FC, useCallback, useEffect, useReducer, useState} from "react";
+import {Button, List, Modal, Placeholder, Spinner, Subheadline,} from "@telegram-apps/telegram-ui";
 
 import "./IndexPage.scss";
 import {ActivitiesDateSelect} from "@/components/ActivitiesDateSelect.tsx";
 import {ActivityTypesButtons} from "@/components/ActivityTypesButtons.tsx";
 import {ActivityType} from "@/types/ActivityType.ts";
-import {postEvent, retrieveLaunchParams} from "@telegram-apps/sdk-react";
+import {backButton, mainButton, retrieveLaunchParams} from "@telegram-apps/sdk-react";
 import ActivityBtnState from "@/types/ActivityBtnState.ts";
 import {Page} from "@/components/Page.tsx";
-import {useGetLastUserActivity} from "@/hooks/activity.ts";
+import {useCreateNewActivities, useGetLastUserActivity} from "@/hooks/activity.ts";
+import {Icon24Checkmark} from "@/components/icons/Icon24Checkmark.tsx";
+import ActivityState from "@/types/ActivityState.ts";
 
 enum ActivityButtonActionType {
   TOGGLE = "toggle",
@@ -26,7 +28,8 @@ interface  ActivityButtonAction {
 }
 
 /**
- * Get activities that user have to fill, based on last filled activity
+ * Get activities that user have to fill, based on last filled activity. Maximum is 12 hours items.
+ * 6 hours items for newbie.
  * @param lastActivityUTCDate - Date of the last filled activity in UTC.
  * @return ActivitiesState - Activities state that user have to fill.
  */
@@ -42,13 +45,15 @@ function getActivitiesToFill(lastActivityUTCDate: Date | undefined): ActivitiesS
   if (lastActivityUTCDate !== undefined) {
     lastActivityDate = new Date(lastActivityUTCDate.getTime() + (-currentDate.getTimezoneOffset()) * 60_000);
   } else {
+    // If user is newbie for us, we show him only last seven hours for activities filling
     lastActivityDate = new Date(currentDate.getTime() - 7 * OneHourInMs);
   }
 
 
+  // Now get hours activities to fill, but less than 12 items
   const diffMs: number = (currentDate.getTime() - lastActivityDate.getTime());
   let diffHours: number = Math.floor(diffMs / OneHourInMs) - 1;
-  if (diffHours > 24) diffHours = 24;
+  if (diffHours > 12) diffHours = 12;
 
   const activitiesStateToSet: ActivitiesState = [];
   for (let i: number = diffHours; i != 0; i--) {
@@ -59,29 +64,92 @@ function getActivitiesToFill(lastActivityUTCDate: Date | undefined): ActivitiesS
 }
 
 
+/**
+ * Get header and description of Placeholder component based on Activities States data.
+ * @param isLoading - Is data about Activities state is loading.
+ * @param hasError - True if we have some errors after loading data about Activities, otherwise - false.
+ * @param isActivitiesStateEmpty - True if we don't have any activities to set by user, otherwise - false.
+ * @return Arguments for Placeholder component about loading Activities States data.
+ */
+function getPlaceholderTexts(
+  isLoading: boolean, hasError: boolean, isActivitiesStateEmpty: boolean
+): {header: string, description: string} {
+  if (isLoading) return {
+      header: 'Loading data...',
+      description: 'Wait a little',
+    }
+  else if (hasError) return {
+      header: "Some error occurs :(",
+      description: "Try again later!",
+    }
+  else if (isActivitiesStateEmpty) return {
+      header: "All activities are set!",
+      description: "You set all your activities, great job, buddy",
+    }
+  else return {
+    header: "Set your activities",
+    description: "",
+  }
+}
+
+
 export const IndexPage: FC = () => {
   const { initData } = retrieveLaunchParams();
 
   const { lastActivity, isLoading, error} = useGetLastUserActivity(initData?.user?.id!);
 
-  useEffect(() => {
-    postEvent(
-    'web_app_setup_main_button',
-    {
-      is_visible: false,
-      is_active: false,
-      text: 'Save activities',
-    });
-  }, []);
+  // State below means that the modal status window for creation new activities is visible
+  const [ modalWindowIsVisible, setModalWindowIsVisible ] = useState(false);
 
+  const [ createNewActivities, isCreationLoading, creationError ] = useCreateNewActivities(initData?.user?.id!);
   const initActivities: ActivitiesState = [];
   const [activitiesState, dispatchActivities] = useReducer(activitiesReducer, initActivities);
 
+
+  // Main button as "save" button
+  const saveNewActivities = useCallback(async () => {
+    if (activitiesState.some((item) => item.activity === undefined))
+      return;
+
+    setModalWindowIsVisible(true);
+    await createNewActivities(activitiesState as ActivityState[]);
+
+    // Clear activities to show the final placeholder of activities saving
+    dispatchActivities({
+      type: ActivityButtonActionType.FILL_ACTIVITIES,
+      newActivities: [],
+    });
+  }, [activitiesState]);
+
+  // Main button function handler
+  useEffect(() => {
+    mainButton.mount();
+    mainButton.setParams({
+      isVisible: false,
+      isEnabled: false,
+      text: '',
+    });
+
+    async function handleMainButton() {
+      mainButton.setParams({
+        isVisible: false,
+        isEnabled: false,
+        text: 'Close',
+      });
+      await saveNewActivities();
+    }
+
+    mainButton.onClick(handleMainButton);
+
+    return () => { backButton.mount(); mainButton.offClick(handleMainButton); };
+  }, []);
+
+  // Fill initial activities
   useEffect(() => {
     if (isLoading || error !== '') return;
     dispatchActivities({
       type: ActivityButtonActionType.FILL_ACTIVITIES,
-      newActivities: getActivitiesToFill(lastActivity?.time),
+      newActivities: [...getActivitiesToFill(lastActivity?.time)],
     });
   }, [isLoading]);
 
@@ -99,24 +167,33 @@ export const IndexPage: FC = () => {
     });
   }
 
-  const isStateReady = (!isLoading && error === '' && activitiesState.length !== 0);
-  let placeholderHeader: string, placeholderDescription: string;
-  if (isLoading) {
-    placeholderHeader = 'Loading data...';
-    placeholderDescription = 'Wait a little';
-  } else if (error !== '') {
-    placeholderHeader = "Some error occurs :(";
-    placeholderDescription = "Try again later!";
-  } else if (activitiesState.length === 0) {
-    placeholderHeader = "All activities are set!";
-    placeholderDescription = "You set all your activities, great job, buddy";
-  } else {
-    placeholderHeader = "Set your activities";
-    placeholderDescription = "";
-  }
+  const isReadyToFillActivities = (!isLoading && error === '' && activitiesState.length !== 0);
 
   return (
     <Page back={false}>
+      <Modal open={modalWindowIsVisible} title={"Status"}>
+        <Placeholder
+          header={isCreationLoading ? "Sending data..." : (creationError ?  "Error" : "Data is successfully sent!")}
+          description={isCreationLoading ? "Wait please" : (creationError === '' ? "You can close it" : "Try again later!")}
+        >
+          {
+            isCreationLoading
+              ? <Spinner size="l" />
+              : <Icon24Checkmark width={96} height={96}/>
+          }
+        </Placeholder>
+        {
+          !isCreationLoading
+          && <Button
+                style={{display: "flex", margin: "auto", marginBottom: "25px"}}
+                onClick={() => setModalWindowIsVisible(false)}
+                size="s"
+            >
+                Close Modal
+            </Button>
+        }
+      </Modal>
+
       <List
         style={{
           backgroundColor: "var(--tgui--secondary_bg_color)",
@@ -125,19 +202,22 @@ export const IndexPage: FC = () => {
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
-      }}
+        }}
       >
         <div style={{maxWidth: "250px", margin: "0 auto"}}>
           <Placeholder
-            header={placeholderHeader}
-            description={placeholderDescription}
+            {...getPlaceholderTexts(isLoading, error !== '', activitiesState.length === 0)}
             style={{padding: "0 0 16px 0", gap: 1}}
           >
-            <img alt="note_writing" src="/note_writing.svg" width={96}/>
+            {
+              isLoading
+                ? <Spinner size="l" />
+                : <img alt="note_writing" src="/note_writing.svg" width={96} />
+            }
           </Placeholder>
         </div>
         {
-          isStateReady
+          isReadyToFillActivities
           && (
             <article>
               <ActivitiesDateSelect activitiesData={activitiesState} onToggleHour={handleToggleHour}/>
@@ -169,10 +249,11 @@ const activitiesReducer = (state: ActivitiesState, action: ActivityButtonAction)
         .map((item) => item.isSelected ? {...item, activity: action.newActivityType!, isSelected: false} : item);
 
       if (newHoursData.every((item) => item.activity !== undefined)) {
-        postEvent(
-          'web_app_setup_main_button',
-          {is_visible: true, is_active: true, text: 'Save data!'}
-        );
+        mainButton.setParams({
+          isVisible: true,
+          isEnabled: true,
+          text: 'Save data!',
+        });
       }
       return newHoursData;
     }
