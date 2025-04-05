@@ -47,7 +47,7 @@ class CeleryRedisConfig(BaseSettings):
     redis_path : str
         The path where Redis server is located.
     """
-    model_config = get_base_model_config() | SettingsConfigDict(env_prefix='CELERY_REDIS_')
+    model_config = get_base_model_config() | SettingsConfigDict(env_prefix='CELERY_')
 
     redis_user: Optional[str] = None
     redis_password: Optional[str] = None
