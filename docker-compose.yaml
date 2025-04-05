@@ -15,6 +15,13 @@ services:
       - POSTGRES_USER=${POSTGRES_USER?Variable not set}
       - POSTGRES_DB=${POSTGRES_DB?Variable not set}
 
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
   api-prestart:
     container_name: api-prestart
     image: api-image
@@ -117,10 +124,65 @@ services:
       # Enable redirection for HTTP and HTTPS
       - traefik.http.routers.tg-bot-project-http.middlewares=https-redirect
 
+  tg-web-app:
+    restart: always
+    networks:
+      - traefik-public
+      - default
+    build:
+      context: ./frontend_service
+      args:
+        - NODE_ENV=production
+    environment:
+      - VITE_API_API_DOMAIN=https://api.kitty-go.ru
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik-public
+      - traefik.constraint-label=traefik-public
+
+      - traefik.http.services.tg-web-app.loadbalancer.server.port=3000
+
+      - traefik.http.routers.tg-web-app-http.rule=Host(`web-app.${DOMAIN?Variable not set}`)
+      - traefik.http.routers.tg-web-app-http.entrypoints=http
+
+      - traefik.http.routers.tg-web-app-https.rule=Host(`web-app.${DOMAIN?Variable not set}`)
+      - traefik.http.routers.tg-web-app-https.entrypoints=https
+      - traefik.http.routers.tg-web-app-https.tls=true
+      - traefik.http.routers.tg-web-app-https.tls.certresolver=le
+
+      # Enable redirection for HTTP and HTTPS
+      - traefik.http.routers.tg-web-app-http.middlewares=https-redirect
+
+  celery_worker:
+    build:
+      context: .
+      dockerfile: celery_service/Dockerfile
+    command: celery -A celery_service.tasks worker --loglevel=info
+    env_file:
+      - .env
+    environment:
+      - CELERY_REDIS_HOST=redis
+    depends_on:
+      - redis
+
+  celery_beat:
+    build:
+      context: .
+      dockerfile: celery_service/Dockerfile
+    command: celery -A celery_service.main beat --loglevel=info
+    env_file:
+      - .env
+    environment:
+      - CELERY_REDIS_HOST=redis
+    depends_on:
+      - redis
+      - celery_worker
+
 
 volumes:
   db-volume:
   api-logs:
+  redis_data:
 
 
 networks:
