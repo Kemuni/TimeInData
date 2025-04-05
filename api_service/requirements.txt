@@ -12,3 +12,4 @@ loguru~=0.7.2
 # ORM and libs to work with various databases
 SQLAlchemy~=2.0.2
 alembic~=1.13.1
+asyncpg~=0.30.0

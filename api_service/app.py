@@ -35,8 +35,15 @@ def init_app() -> FastAPI:
 
 
 def main() -> None:
-    uvicorn.run(init_app(), host=get_config().api.host, port=get_config().api.port, log_config=LOGGING_CONFIG)
+    uvicorn.run(
+        "__main__:app",
+        host=get_config().api.host,
+        port=get_config().api.port,
+        log_config=LOGGING_CONFIG,
+    )
 
+
+app = init_app()
 
 if __name__ == '__main__':
     main()
