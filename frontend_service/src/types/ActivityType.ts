@@ -23,7 +23,7 @@ export enum ActivityType {
 
 
 export enum ActivityIntType {
-  Sleep,
+  Sleep = 1,
   Work,
   Study,
   Family,

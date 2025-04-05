@@ -26,7 +26,7 @@ class DBConfig(BaseSettings):
 
     Attributes
     ----------
-    host : str
+    server : str
         The host where the database server is located.
     password : str
         The password used to authenticate with the database.
