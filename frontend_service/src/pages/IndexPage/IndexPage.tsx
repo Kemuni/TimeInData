@@ -5,7 +5,12 @@ import "./IndexPage.scss";
 import {ActivitiesDateSelect} from "@/components/ActivitiesDateSelect.tsx";
 import {ActivityTypesButtons} from "@/components/ActivityTypesButtons.tsx";
 import {ActivityType} from "@/types/ActivityType.ts";
-import {backButton, mainButton, retrieveLaunchParams} from "@telegram-apps/sdk-react";
+import {
+  backButton,
+  initDataState as _initDataState,
+  mainButton,
+  useSignal
+} from "@telegram-apps/sdk-react";
 import ActivityBtnState from "@/types/ActivityBtnState.ts";
 import {Page} from "@/components/Page.tsx";
 import {useCreateNewActivities, useGetLastUserActivity} from "@/hooks/activity.ts";
@@ -94,17 +99,17 @@ function getPlaceholderTexts(
 
 
 export const IndexPage: FC = () => {
-  const { initData } = retrieveLaunchParams();
+  const initDataState = useSignal(_initDataState);
 
-  const { lastActivity, isLoading, error} = useGetLastUserActivity(initData?.user?.id!);
+  const { lastActivity, isLoading, error} = useGetLastUserActivity(initDataState?.user?.id);
 
-  // State below means that the modal status window for creation new activities is visible
-  const [ modalWindowIsVisible, setModalWindowIsVisible ] = useState(false);
-
-  const [ createNewActivities, isCreationLoading, creationError ] = useCreateNewActivities(initData?.user?.id!);
+  const { createNewActivities, isLoading: isCreationLoading, error: creationError } =
+    useCreateNewActivities(initDataState?.user?.id);
   const initActivities: ActivitiesState = [];
   const [activitiesState, dispatchActivities] = useReducer(activitiesReducer, initActivities);
 
+  // State below means that the modal status window for creation new activities is visible
+  const [ modalWindowIsVisible, setModalWindowIsVisible ] = useState(false);
 
   // Main button as "save" button
   const saveNewActivities = useCallback(async () => {

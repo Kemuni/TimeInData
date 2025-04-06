@@ -12,76 +12,100 @@ interface ResponseActivity {
 }
 
 
-export const useGetLastUserActivity = (userId: number) => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [lastActivity, setLastActivity] = useState<Activity|null>(null);
+interface UseGetLastUserActivityResult {
+  lastActivity: Activity | null;
+  isLoading: boolean;
+  error: string;
+}
+
+
+export const useGetLastUserActivity = (
+  userId?: number
+): UseGetLastUserActivityResult => {
+  const [state, setState] = useState<UseGetLastUserActivityResult>({
+    lastActivity: null,
+    isLoading: false,
+    error: "",
+  });
 
   useEffect(() => {
+    if (!userId) return;
+
     const fetchData = async () => {
-      setIsLoading(true);
-      await axios.get<ResponseActivity | null>(
-        APIEndpointsUrls.GetUserLastActivity(userId), {
-          headers: {
-            "Content-Type": "application/json",
-          },
-          timeout: 5000
-        }
-      )
-      .then(({ data }) => {
-        if (data !== null) setLastActivity({...data, time: new Date(data.time)});
-        setIsLoading(false);
-      })
-      .catch((e) => {
-        setError(e.toString());
-        setIsLoading(false);
-        console.log(e);
-      });
+      setState((prev) => ({ ...prev, isLoading: true, error: "" }));
+
+      try {
+        const { data } = await axios.get<ResponseActivity | null>(
+          APIEndpointsUrls.GetUserLastActivity(userId),
+          {
+            headers: { "Content-Type": "application/json" },
+            timeout: 5000,
+          }
+        );
+
+        setState({
+          lastActivity: data ? { ...data, time: new Date(data.time) } : null,
+          isLoading: false,
+          error: "",
+        });
+      } catch (e) {
+        setState({
+          lastActivity: null,
+          isLoading: false,
+          error: e instanceof Error ? e.message : "Unknown error",
+        });
+      }
     }
 
     fetchData();
-  }, []);
+  }, [userId]);
 
-  return { lastActivity, isLoading, error };
+  return state;
 }
 
-export const useCreateNewActivities = (userId: number): [(activities: ActivityState[]) => Promise<void>, boolean, string] => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
 
-  const createNewActivities = async (activities: ActivityState[]): Promise<void> => {
-    setIsLoading(true);
-    setError('')
+interface UseCreateNewActivitiesResult {
+  createNewActivities: (activities: ActivityState[]) => Promise<void>;
+  isLoading: boolean;
+  error: string;
+}
 
-    const data = {
-      activities: activities.map(
-        (item) => {
-          const keys = Object.values(ActivityType);
-          return {type: keys.indexOf(item.activity) + 1, time: item.date.toISOString()}
-        }
-      )
+
+export const useCreateNewActivities = (
+  userId?: number
+): UseCreateNewActivitiesResult => {
+  const [state, setState] = useState<Omit<UseCreateNewActivitiesResult, "createNewActivities">>({
+    isLoading: false,
+    error: "",
+  });
+
+  const createNewActivities = async (activities: ActivityState[]) => {
+    if (!userId) {
+      setState((prev) => ({ ...prev, error: "User ID is missing" }));
+      return;
     }
 
-    await axios.post(
-      APIEndpointsUrls.PostNewUserActivities(userId),
-      data,
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
-        timeout: 8000
-      }
-    )
-      .then(() => {
-        setIsLoading(false);
-        console.log('SUCCESS');
-      })
-      .catch((e) => {
-        setError(e.toString());
-        setIsLoading(false);
-        console.log(e);
+    setState({ isLoading: true, error: "" });
+
+    try {
+      const data = activities.map((item) => ({
+        type: Object.values(ActivityType).indexOf(item.activity) + 1,
+        time: item.date.toISOString(),
+      }));
+
+      await axios.post(APIEndpointsUrls.PostNewUserActivities(userId), { activities: data }, {
+        headers: { "Content-Type": "application/json" },
+        timeout: 8000,
       });
+
+      setState({ isLoading: false, error: "" });
+    } catch (e) {
+      setState({
+        isLoading: false,
+        error: e instanceof Error ? e.message : "Failed to create activities",
+      });
+    }
   }
 
-  return [ createNewActivities, isLoading, error ];
+  return { ...state, createNewActivities };
 }
