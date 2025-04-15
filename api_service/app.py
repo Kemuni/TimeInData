@@ -18,9 +18,9 @@ async def lifespan(app: FastAPI):
 
 
 def init_app() -> FastAPI:
-    app = FastAPI(lifespan=lifespan)
+    application = FastAPI(lifespan=lifespan)
 
-    app.add_middleware(
+    application.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
         allow_credentials=True,
@@ -29,9 +29,9 @@ def init_app() -> FastAPI:
     )
 
     for router in routers_list:
-        app.include_router(router)
+        application.include_router(router)
 
-    return app
+    return application
 
 
 def main() -> None:
@@ -40,6 +40,7 @@ def main() -> None:
         host=get_config().api.host,
         port=get_config().api.port,
         log_config=LOGGING_CONFIG,
+        reload=True,
     )
 
 

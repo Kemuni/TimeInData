@@ -2,7 +2,7 @@ import enum
 from datetime import datetime
 from typing import List
 
-from sqlalchemy import ForeignKey, String, TIMESTAMP, BIGINT, SMALLINT
+from sqlalchemy import ForeignKey, String, TIMESTAMP, BIGINT, SMALLINT, UniqueConstraint
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import DeclarativeBase, relationship
 from sqlalchemy.orm import Mapped
@@ -35,12 +35,12 @@ class User(Base):
 class ActivityTypes(enum.Enum):
     SLEEP = 1
     WORK = 2
-    STUDYING = 3
+    STUDY = 3
     FAMILY = 4
     FRIENDS = 5
     PASSIVE = 6  # Something to relax
     EXERCISE = 7  # Physical exercises
-    READING = 8
+    GAMES = 8
 
 
 class Activity(Base):
@@ -50,9 +50,11 @@ class Activity(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     type: Mapped[ActivityTypes]
-    time: Mapped[datetime] = mapped_column(TIMESTAMP, default=utcnow())
+    time: Mapped[datetime] = mapped_column(TIMESTAMP, default=utcnow())  # In UTC
 
     user: Mapped["User"] = relationship(back_populates="activities")
+
+    __table_args__ = (UniqueConstraint('user_id', 'time', name='uix_user_id_time'),)
 
     def __repr__(self) -> str:
         return f'<Activity at {self.time.strftime("%d/%m/%Y at %H hours")} type: {self.type}>'

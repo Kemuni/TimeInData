@@ -12,12 +12,12 @@ from config import get_config
 class ActivityTypes(enum.Enum):
     SLEEP = 1
     WORK = 2
-    STUDYING = 3
+    STUDY = 3
     FAMILY = 4
     FRIENDS = 5
     PASSIVE = 6  # Something to relax
     EXERCISE = 7  # Physical exercises
-    READING = 8
+    GAMES = 8
 
 
 @dataclass

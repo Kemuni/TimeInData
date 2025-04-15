@@ -13,7 +13,7 @@ def get_base_model_config() -> SettingsConfigDict:
         logger.warning('DEBUG MODE ON!')
 
     return SettingsConfigDict(
-        env_file='../.env' if debug_mode else '../prod.env',
+        env_file='../.env' if debug_mode else '../.env.production',
         env_nested_delimiter='__',
         extra='ignore',
     )

@@ -59,3 +59,14 @@ class LastActivityOut(ActivityBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+
+
+class TimeInterval(BaseModel):
+    from_date: datetime
+    to_date: datetime
+
+
+class TimeIntervalResponse(BaseModel):
+    has_items_to_fill: bool
+    is_newbie_user: bool
+    interval: Optional[TimeInterval] = None
