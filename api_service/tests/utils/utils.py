@@ -9,11 +9,11 @@ def get_random_lower_string(length: int = 32) -> str:
     return "".join(random.choices(string.ascii_lowercase, k=length))
 
 
-def get_random_number(min_num: int = 1, max_num: int = 100_000) -> int:
+def get_random_number(min_num: int = 1, max_num: int = 999_999_999) -> int:
     """
     Get random number in range [`min_num`, `max_num`].
     :param min_num: The minimum number. By default, 1.
-    :param max_num: The maximum number. By default, 100_000.
+    :param max_num: The maximum number. By default, 999_999_999.
     :return: The random number in range [`min_num`, `max_num`].
     """
     if min_num > max_num:

@@ -53,10 +53,8 @@ async def db_session(db_engine: AsyncEngine) -> AsyncGenerator[AsyncSession, Non
     )
 
     async with session_factory() as session:
-        try:
-            yield session
-        finally:
-            await session.rollback()
+        yield session
+        await session.rollback()
 
 
 @pytest.fixture
