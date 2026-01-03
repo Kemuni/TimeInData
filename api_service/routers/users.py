@@ -10,13 +10,15 @@ from database.repositories import DatabaseRepo
 from dependencies import get_db
 from loguru import  logger
 
+from utils.utcnow import utcnow
+
 router = APIRouter(prefix='/users', tags=['users'])
 
 
 @router.get('/to_notify')
 async def get_users_to_notify(db: DatabaseRepo = Depends(get_db)) -> schemas.UsersToNotifyOut:
-    """ Get users, that's need to notify (set activities) in current UTC hour. """
-    user_ids = await db.users.get_ids_to_notify(datetime.utcnow().hour) or []
+    """ Get users, which a needed to be notified (set activities) in the current UTC hour. """
+    user_ids = await db.users.get_ids_to_notify(utcnow().hour) or []
     return schemas.UsersToNotifyOut(user_ids=user_ids)
 
 
@@ -37,8 +39,12 @@ async def update_notify_hours(
         db: DatabaseRepo = Depends(get_db)
 ) -> Response:
     """  Update user notify hours in the database. """
+    if len(notify_hours) != len(set(notify_hours)):
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                            detail=f"Notify hours must be unique.")
+
     await db.users.update_notify_hours(user_id, notify_hours)
-    return Response(status_code=status.HTTP_200_OK, content="User's notify hours has been updated")
+    return Response(status_code=status.HTTP_200_OK, content="User's notify hours has been updated.")
 
 
 @router.get('/{user_id}/notify_hours')
@@ -68,27 +74,34 @@ async def get_last_activity(
 async def get_time_interval_to_set_activities(
         user_id: schemas.TelegramUserId,
         max_hours_delta: Optional[int] = 24,
+        newbie_hours_delta: Optional[int] = 6,
         db: DatabaseRepo = Depends(get_db),
 ) -> schemas.TimeIntervalResponse:
     """
-    Get time interval to set activities for user with `user_id`.
+    Get the time interval to set activities for user with `user_id`. For newbie users, we display fewer hours.
+    For example [2025.02.01 11:00, 2025.02.02 13:00] result means that you have to set 11:00, 12:00, 13:00 activities.
 
     :param user_id: The user's telegram ID.
-    :param max_hours_delta: The maximum hours delta in interval.
+    :param max_hours_delta: The maximum hours delta in the interval.
+    :param newbie_hours_delta: The hour delta in the interval for newbie user.
     :param db: The database repository.
     :return: Time interval to set activities.
     """
     last_activity = await db.users.get_last_activity(user_id)
-    utc_now = datetime.utcnow()
+    utc_now = utcnow()
     is_newbie_user = last_activity is None
 
-    if is_newbie_user:  # For newbies, we show only last 6 hours so we don't scare him
-        max_hours_delta = 6
-        from_date = utc_now - timedelta(hours=max_hours_delta)
+    if is_newbie_user:
+        max_hours_delta = newbie_hours_delta
+        from_date = datetime(utc_now.year, utc_now.month, utc_now.day, utc_now.hour) - timedelta(hours=max_hours_delta)
     else:
-        from_date = last_activity.time
+        from_date = last_activity.time + timedelta(hours=1)
 
-    to_date = min(from_date + timedelta(hours=max_hours_delta), utc_now)
+    to_date = min(
+        from_date + timedelta(hours=max_hours_delta),
+        # if now is 22:33, we can set activity only to 21:00, so we subtract 1 hour
+        datetime(utc_now.year, utc_now.month, utc_now.day, utc_now.hour - 1)
+    )
     has_items_to_fill = (utc_now - from_date) > timedelta(hours=1)
 
     if has_items_to_fill:
@@ -117,8 +130,8 @@ async def add_activities(
         activities: Annotated[List[schemas.ActivityBase], Body(embed=True)],
         db: DatabaseRepo = Depends(get_db)
 ) -> Response:
-    """ Add list of new activities for user with `user_id`. """
-    utcnow_timestamp = datetime.utcnow().timestamp()
+    """ Add a list of new activities for user with `user_id`. """
+    utcnow_timestamp = utcnow().timestamp()
     for activity in activities:
         activity.time = activity.time.replace(tzinfo=None)
         if activity.time.timestamp() > utcnow_timestamp:
@@ -127,7 +140,7 @@ async def add_activities(
     try:
         await db.users.add_activities(user_id, activities)
     except IntegrityError as exc:
-        logger.error(f'Get activity with time which time is already exist. IntegrityError: {exc}')
+        logger.error(f'Get activity which time is already exist. IntegrityError: {exc}')
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                             detail=f"Incorrect activity time. The time in one of the activities is already exists.")
 

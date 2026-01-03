@@ -4,6 +4,7 @@ from typing import Optional, List
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+import schemas
 from database.models import User
 from tests.utils.utils import get_random_lower_string, get_random_datetime, get_random_number
 
@@ -19,7 +20,7 @@ def get_random_user_model(
         joined_at: Optional[datetime] = None,
         last_activity: Optional[datetime] = None,
         notify_hours: Optional[List[int]] = None,
-        time_zone_delta: Optional[int] = None
+        time_zone_delta: Optional[int] = None,
 ):
     """ Create random model of `User`. NO OBJECT CREATION IN DATABASE. """
     joined_at = joined_at or get_random_datetime()
@@ -35,6 +36,19 @@ def get_random_user_model(
         last_activity=last_activity,
         notify_hours=notify_hours,
         time_zone_delta=time_zone_delta or get_random_number(min_num=-6, max_num=6)
+    )
+
+
+def get_random_user_base_schema(
+        _id: Optional[int] = None,
+        username: Optional[str] = None,
+        language: Optional[str] = None,
+) -> schemas.UserBase:
+    """ Create random schema of `UserBase`. """
+    return schemas.UserBase(
+        id=_id or get_random_telegram_id(),
+        username=username or get_random_lower_string(length=32),
+        language=language or "en",
     )
 
 

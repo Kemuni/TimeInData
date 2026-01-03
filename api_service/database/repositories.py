@@ -1,11 +1,11 @@
-from typing import Optional, List, Sequence, Dict, Tuple
+from typing import Optional, List, Sequence, Tuple
 
 from sqlalchemy import update, select, func, Row
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 import schemas
-from .func import utcnow
+from .func import db_utcnow
 from .models import User, Activity, Base, ActivityTypes
 
 
@@ -61,7 +61,7 @@ class UserRepo(BaseRepo):
                 set_=dict(
                     username=username,
                     language=language,
-                    last_activity=utcnow(),
+                    last_activity=db_utcnow(),
                 ),
             )
             .returning(

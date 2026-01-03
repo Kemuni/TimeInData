@@ -1,7 +1,6 @@
 from collections import Counter
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 
-import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -10,8 +9,6 @@ from database.repositories import UserRepo
 from tests.utils.activity import get_random_activity_model, get_random_activity_base
 from tests.utils.user import get_random_user_model, get_random_telegram_id, get_user_from_db
 from tests.utils.utils import get_random_lower_string, get_random_datetime
-
-pytestmark = pytest.mark.asyncio
 
 
 async def test_get_ids_to_notify(db_session: AsyncSession) -> None:
@@ -53,7 +50,7 @@ async def test_user_create_or_update(db_session: AsyncSession) -> None:
         time_zone_delta=0,
     )
 
-    utc_now = datetime.utcnow()
+    utc_now = datetime.now(UTC).replace(tzinfo=None)
     user, is_created = await repo.create_or_update(
         user_id=user_schema.id, language=user_schema.language, username=user_schema.username
     )
@@ -70,7 +67,7 @@ async def test_user_create_or_update(db_session: AsyncSession) -> None:
     # Test update
     user_schema.username = get_random_lower_string()
     user_schema.language = "ru"
-    utc_now = datetime.utcnow()
+    utc_now = datetime.now(UTC).replace(tzinfo=None)
     user, is_created = await repo.create_or_update(
         user_id=user_schema.id, language=user_schema.language, username=user_schema.username
     )

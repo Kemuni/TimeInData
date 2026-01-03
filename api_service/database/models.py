@@ -8,7 +8,7 @@ from sqlalchemy.orm import DeclarativeBase, relationship
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 
-from .func import utcnow
+from .func import db_utcnow
 
 
 class Base(DeclarativeBase):
@@ -21,8 +21,8 @@ class User(Base):
     id: Mapped[int] = mapped_column(BIGINT, primary_key=True, autoincrement=False)  # Telegram ID
     username: Mapped[str] = mapped_column(String(128))
     language: Mapped[str] = mapped_column(String(10))
-    joined_at: Mapped[datetime] = mapped_column(TIMESTAMP, server_default=utcnow())
-    last_activity: Mapped[datetime] = mapped_column(TIMESTAMP, server_default=utcnow())
+    joined_at: Mapped[datetime] = mapped_column(TIMESTAMP, server_default=db_utcnow())
+    last_activity: Mapped[datetime] = mapped_column(TIMESTAMP, server_default=db_utcnow())
     notify_hours: Mapped[List[int]] = mapped_column(ARRAY(SMALLINT), nullable=True)
     time_zone_delta: Mapped[int] = mapped_column(SMALLINT, default=0)  # In hours. UTC+3 = 3. UTC-2 = -2
 
@@ -50,7 +50,7 @@ class Activity(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     type: Mapped[ActivityTypes]
-    time: Mapped[datetime] = mapped_column(TIMESTAMP, default=utcnow())  # In UTC
+    time: Mapped[datetime] = mapped_column(TIMESTAMP, default=db_utcnow())  # In UTC
 
     user: Mapped["User"] = relationship(back_populates="activities")
 

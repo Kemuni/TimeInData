@@ -1,5 +1,3 @@
-from contextlib import asynccontextmanager
-
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,16 +7,8 @@ from logger.log_conf import LOGGING_CONFIG
 from routers import routers_list
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    from database.session_manager import session_manager
-    session_manager.init()
-    yield
-    await session_manager.close()
-
-
 def init_app() -> FastAPI:
-    application = FastAPI(lifespan=lifespan)
+    application = FastAPI()
 
     application.add_middleware(
         CORSMiddleware,
