@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 from typing import List, Annotated, Optional
 
 from fastapi import APIRouter, Depends, status, Body, HTTPException, Response
+from pydantic import Field
 from sqlalchemy.exc import IntegrityError
 from starlette.responses import JSONResponse
 
@@ -65,7 +66,11 @@ async def get_last_activity(
 
 @router.get(
     '/{user_id}/activities/time_interval',
-    description='Get time interval to set activities for user with `user_id`.'
+    description='''
+    Get the time interval to set activities for user with `user_id`. For newbie users, we display fewer hours.
+    For example `["2025.02.01 11:00", "2025.02.02 13:00"]` result means that you have to set activities in 
+    11:00, 12:00 and 13:00 time. So, **from_date and to_date are inclusive** in the interval.
+    '''
 )
 async def get_time_interval_to_set_activities(
         user_id: schemas.TelegramUserId,
