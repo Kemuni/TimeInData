@@ -1,7 +1,7 @@
 from datetime import datetime, date, time
 from typing import List
 
-from annotated_types import Gt, Lt
+from annotated_types import Gt, Ge, Le
 from pydantic import BaseModel, ConfigDict, field_serializer, Field, field_validator
 from pydantic_core._pydantic_core import PydanticCustomError
 from typing_extensions import Annotated, Optional
@@ -9,8 +9,8 @@ from typing_extensions import Annotated, Optional
 from database.models import ActivityTypes
 
 TelegramUserId = Annotated[int, Gt(0)]
-HourNumber = Annotated[int, Gt(-1), Lt(24)]
-TzDeltaNumber = Annotated[int, Gt(-13), Lt(13)]
+HourNumber = Annotated[int, Ge(0), Le(23)]
+TzDeltaNumber = Annotated[int, Ge(-12), Le(12)]
 
 
 class UserBase(BaseModel):

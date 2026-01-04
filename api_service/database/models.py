@@ -37,6 +37,10 @@ class User(Base):
 
     __table_args__ = (
         CheckConstraint(
+            'time_zone_delta BETWEEN -12 AND 12',
+            name='check_timezone_range'
+        ),
+        CheckConstraint(
             "array_length(notify_hours, 1) <= 24",
             name='check_notify_hours_max_length'
         ),

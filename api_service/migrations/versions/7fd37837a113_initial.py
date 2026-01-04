@@ -1,8 +1,8 @@
 """initial
 
-Revision ID: dfb0853815e8
+Revision ID: 7fd37837a113
 Revises: 
-Create Date: 2026-01-04 02:09:56.286170
+Create Date: 2026-01-04 05:11:19.477019
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = 'dfb0853815e8'
+revision: str = '7fd37837a113'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -30,6 +30,7 @@ def upgrade() -> None:
     sa.Column('time_zone_delta', sa.SMALLINT(), nullable=False),
     sa.CheckConstraint('array_length(notify_hours, 1) <= 24', name='check_notify_hours_max_length'),
     sa.CheckConstraint('notify_hours <@ ARRAY[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]::smallint[]', name='check_notify_hours_range'),
+    sa.CheckConstraint('time_zone_delta BETWEEN -12 AND 12', name='check_timezone_range'),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index('ix_users_notify_hours', 'users', ['notify_hours'], unique=False, postgresql_using='gin')
