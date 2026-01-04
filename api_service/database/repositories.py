@@ -3,6 +3,7 @@ from typing import Optional, List, Sequence, Tuple
 from sqlalchemy import update, select, func, Row
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.sql.expression import desc
 
 import schemas
 from .func import db_utcnow
@@ -28,9 +29,9 @@ class UserRepo(BaseRepo):
 
     async def get_ids_to_notify(self, hour: int) -> Sequence[int]:
         """
-         Get list of user_ids that should be notified on a specific hour.
+         Get a list of user_ids that should be notified on a specific hour.
 
-        :param hour: The hour when user's should be notified.
+        :param hour: The hour when user should be notified.
         :return: List of user_ids.
         """
         get_stmt = (
@@ -46,7 +47,7 @@ class UserRepo(BaseRepo):
         :param user_id: The user's telegram ID.
         :param language: The user's language.
         :param username: The user's username. It's an optional parameter.
-        :return: The User model and bool is_created, True if it is new user, otherwise False.
+        :return: The User model and bool is_created, True if it is a new user, otherwise False.
         """
         is_created_column = (User.joined_at == User.last_activity).label("is_created")
         insert_stmt = (
@@ -80,7 +81,7 @@ class UserRepo(BaseRepo):
 
     async def update_notify_hours(self, user_id: int, new_hours: List[int]) -> None:
         """
-        Update user notify hours in the database.
+        Update user notifies hours in the database.
         :param user_id: The user's telegram ID.
         :param new_hours: The new user's hours to notify.
         """
@@ -95,7 +96,7 @@ class UserRepo(BaseRepo):
 
     async def get_notify_hours(self, user_id: int) -> Optional[List[int]]:
         """
-        Get user notify hours from the database.
+        Get user notifies hours from the database.
         :param user_id: The user's telegram ID.
         :return: List with user notify hours or None.
         """
@@ -116,14 +117,15 @@ class UserRepo(BaseRepo):
         get_stmt = (
             select(Activity)
             .where(Activity.user_id == user_id)
-            .order_by(Activity.time.desc())
+            .order_by(desc(Activity.utc_date), desc(Activity.utc_hour))
+            .limit(1)
         )
-        result = await self.session.scalars(get_stmt)
-        return result.first()
+        result = await self.session.execute(get_stmt)
+        return result.scalar_one_or_none()
 
     async def add_activities(self, user_id: int, activities: List[schemas.ActivityBase]) -> None:
         """
-        Add list of new activities for user with `user_id`,
+        Add a list of new activities for user with `user_id`,
         :param user_id: The user's telegram ID in the database.
         :param activities: A list of new activities.
         """

@@ -35,15 +35,11 @@ async def create_or_update(user: schemas.UserBase, db: DatabaseRepo = Depends(ge
 @router.put('/{user_id}/notify_hours')
 async def update_notify_hours(
         user_id: schemas.TelegramUserId,
-        notify_hours: Annotated[List[schemas.HourNumber], Body(embed=True)],
+        hours_data: schemas.UserNotifyHoursIn,
         db: DatabaseRepo = Depends(get_db)
 ) -> Response:
-    """  Update user notify hours in the database. """
-    if len(notify_hours) != len(set(notify_hours)):
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-                            detail=f"Notify hours must be unique.")
-
-    await db.users.update_notify_hours(user_id, notify_hours)
+    """  Update user hours to notify in the database. """
+    await db.users.update_notify_hours(user_id, hours_data.notify_hours)
     return Response(status_code=status.HTTP_200_OK, content="User's notify hours has been updated.")
 
 
@@ -52,7 +48,7 @@ async def get_notify_hours(
         user_id: schemas.TelegramUserId,
         db: DatabaseRepo = Depends(get_db)
 ) -> schemas.UserNotifyHoursOut:
-    """ Get user notify hours from the database. """
+    """ Get user hours to notify from the database. """
     notify_hours = await db.users.get_notify_hours(user_id) or []
     return schemas.UserNotifyHoursOut(notify_hours=notify_hours)
 
@@ -61,10 +57,10 @@ async def get_notify_hours(
 async def get_last_activity(
         user_id: schemas.TelegramUserId,
         db: DatabaseRepo = Depends(get_db)
-) -> Optional[schemas.LastActivityOut]:
+) -> Optional[schemas.ActivityOut]:
     """  Get last created activity by user with `user_id`. """
     last_activity = await db.users.get_last_activity(user_id)
-    return schemas.LastActivityOut.model_validate(last_activity) if last_activity else None
+    return schemas.ActivityOut.model_validate(last_activity) if last_activity else None
 
 
 @router.get(
@@ -95,7 +91,7 @@ async def get_time_interval_to_set_activities(
         max_hours_delta = newbie_hours_delta
         from_date = datetime(utc_now.year, utc_now.month, utc_now.day, utc_now.hour) - timedelta(hours=max_hours_delta)
     else:
-        from_date = last_activity.time + timedelta(hours=1)
+        from_date = last_activity.start_datetime_utc + timedelta(hours=1)
 
     to_date = min(
         from_date + timedelta(hours=max_hours_delta),
@@ -127,16 +123,16 @@ async def get_time_interval_to_set_activities(
 )
 async def add_activities(
         user_id: schemas.TelegramUserId,
-        activities: Annotated[List[schemas.ActivityBase], Body(embed=True)],
+        activities: Annotated[List[schemas.ActivityIn], Body(embed=True)],
         db: DatabaseRepo = Depends(get_db)
 ) -> Response:
     """ Add a list of new activities for user with `user_id`. """
     utcnow_timestamp = utcnow().timestamp()
     for activity in activities:
-        activity.time = activity.time.replace(tzinfo=None)
-        if activity.time.timestamp() > utcnow_timestamp:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                                detail=f"Incorrect activity time. {activity.time} is invalid.")
+        if activity.timestamp() > utcnow_timestamp:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                                detail=f"Incorrect activity time. {activity.utc_date} {activity.utc_hour}:00 is invalid.")
+
     try:
         await db.users.add_activities(user_id, activities)
     except IntegrityError as exc:

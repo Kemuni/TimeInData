@@ -1,5 +1,5 @@
 from collections import Counter
-from datetime import datetime, timedelta, UTC
+from datetime import datetime, timedelta, UTC, date
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -8,7 +8,7 @@ from database.models import Activity
 from database.repositories import UserRepo
 from tests.utils.activity import get_random_activity_model, get_random_activity_base
 from tests.utils.user import get_random_user_model, get_random_telegram_id, get_user_from_db
-from tests.utils.utils import get_random_lower_string, get_random_datetime
+from tests.utils.utils import get_random_lower_string
 
 
 async def test_get_ids_to_notify(db_session: AsyncSession) -> None:
@@ -59,7 +59,8 @@ async def test_user_create_or_update(db_session: AsyncSession) -> None:
     assert user.id == user_schema.id
     assert user.language == user_schema.language
     assert user.username == user_schema.username
-    assert user.notify_hours is None
+    assert isinstance(user.notify_hours, list)
+    assert len(user.notify_hours) == 0
     assert user.time_zone_delta == 0
     assert utc_now - timedelta(seconds=2) <= user.joined_at <= utc_now + timedelta(seconds=2)
     assert user.joined_at == user.last_activity
@@ -76,7 +77,8 @@ async def test_user_create_or_update(db_session: AsyncSession) -> None:
     assert user.id == user_schema.id
     assert user.language == user_schema.language
     assert user.username == user_schema.username
-    assert user.notify_hours is None
+    assert isinstance(user.notify_hours, list)
+    assert len(user.notify_hours) == 0
     assert user.time_zone_delta == 0
     assert user.joined_at != user.last_activity
     assert utc_now - timedelta(seconds=2) <= user.last_activity <= utc_now + timedelta(seconds=2)
@@ -121,10 +123,11 @@ async def test_get_last_activity(db_session: AsyncSession) -> None:
     last_activity = await user_repo.get_last_activity(user.id)
     assert last_activity is None
 
-    activity1 = get_random_activity_model(user_id=user.id)
+    activity1 = get_random_activity_model(
+        user_id=user.id, utc_date=date(year=2025, month=12, day=12), utc_hour=13
+    )
     activity2 = get_random_activity_model(
-        user_id=user.id,
-        time=get_random_datetime(to_date=activity1.time) - timedelta(hours=1),
+        user_id=user.id, utc_date=date(year=2025, month=12, day=11), utc_hour=12
     )
     db_session.add_all([activity1, activity2])
     await db_session.commit()
@@ -132,7 +135,8 @@ async def test_get_last_activity(db_session: AsyncSession) -> None:
     last_activity = await user_repo.get_last_activity(user.id)
     assert last_activity.id == activity1.id
     assert last_activity.user_id == activity1.user_id
-    assert last_activity.time == activity1.time
+    assert last_activity.utc_date == activity1.utc_date
+    assert last_activity.utc_hour == activity1.utc_hour
     assert last_activity.type == activity1.type
 
 

@@ -1,8 +1,9 @@
-from datetime import datetime
+from datetime import datetime, date, time
 from typing import List
 
 from annotated_types import Gt, Lt
-from pydantic import BaseModel, ConfigDict, field_serializer, Field
+from pydantic import BaseModel, ConfigDict, field_serializer, Field, field_validator
+from pydantic_core._pydantic_core import PydanticCustomError
 from typing_extensions import Annotated, Optional
 
 from database.models import ActivityTypes
@@ -20,6 +21,19 @@ class UserBase(BaseModel):
 
 class UserNotifyHoursOut(BaseModel):
     notify_hours: List[HourNumber]
+
+
+class UserNotifyHoursIn(BaseModel):
+    notify_hours: List[HourNumber] = Field(..., max_length=24)
+
+    @field_validator("notify_hours", mode="after")
+    def validate_notify_hours(cls, v: List[int]) -> List[int]:
+        if len(v) != len(set(v)):
+            raise PydanticCustomError(
+                'notify_hours_duplicate',
+                "Notify hours in the list must be unique.",
+            )
+        return sorted(v)
 
 
 class UserTimeZoneDeltaOut(BaseModel):
@@ -48,14 +62,20 @@ class UsersToNotifyOut(BaseModel):
 
 class ActivityBase(BaseModel):
     type: ActivityTypes
-    time: datetime
+    utc_date: date
+    utc_hour: int
 
+
+class ActivityIn(ActivityBase):
     @field_serializer("type")
-    def serialize_type(self, type: ActivityTypes):
-        return type.name
+    def serialize_type(self, type_: ActivityTypes):
+        return type_.name
+
+    def timestamp(self) -> float:
+        return datetime.combine(self.utc_date, time(hour=self.utc_hour, minute=0)).timestamp()
 
 
-class LastActivityOut(ActivityBase):
+class ActivityOut(ActivityBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: int

@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, UTC
+from datetime import datetime, timedelta, UTC, date
 from typing import Optional
 
 from fastapi import status
@@ -92,14 +92,14 @@ async def test_update_notify_hours_incorrect_body(async_client: AsyncClient, db_
         response = await async_client.put(f'/users/{user.id}/notify_hours', json={'notify_hours': notify_hours})
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
         if error_msg:
-            assert response.json()['detail'] == error_msg
+            assert response.json()['detail'][0]['msg'] == error_msg
 
         db_user = await get_user_from_db(db_session, user.id)
         assert db_user.notify_hours == user.notify_hours
 
     await try_update_notify_hours([-1, 5])
     await try_update_notify_hours([5, 24])
-    await try_update_notify_hours([5, 5, 6], error_msg='Notify hours must be unique.')
+    await try_update_notify_hours([5, 5, 6], error_msg='Notify hours in the list must be unique.')
 
 
 async def test_get_notify_hours(async_client: AsyncClient, db_session: AsyncSession) -> None:
@@ -135,9 +135,10 @@ async def test_get_last_activity(async_client: AsyncClient, db_session: AsyncSes
     response = await async_client.get(f'/users/{user.id}/activities/last')
     assert response.status_code == status.HTTP_200_OK
 
-    expected_result = schemas.LastActivityOut(
+    expected_result = schemas.ActivityOut(
         id=activity.id,
-        time=activity.time,
+        utc_date=activity.utc_date,
+        utc_hour=activity.utc_hour,
         type=activity.type,
     )
     assert response.json() == expected_result.model_dump(mode='json')
@@ -154,12 +155,12 @@ async def test_get_empty_last_activity(async_client: AsyncClient, db_session: As
 
 
 async def test_get_time_interval_to_set_activities(async_client: AsyncClient, db_session: AsyncSession) -> None:
-    # We mock utc_now with minutes and seconds to check that we don't have it in result
+    # We mock utc_now with minutes and seconds to check that we don't have it in the result
     fake_current_datetime = datetime(year=2025, month=4, day=15, hour=12, minute=30, second=5)
     current_clear_datetime = datetime_to_clear_format(fake_current_datetime)
 
     user = get_random_user_model()
-    activity = get_random_activity_model(user_id=user.id, time=current_clear_datetime - timedelta(hours=3))
+    activity = get_random_activity_model(user_id=user.id, utc_date=date(year=2025, month=4, day=15), utc_hour=8)
     db_session.add_all([user, activity])
     await db_session.commit()
 
@@ -171,10 +172,11 @@ async def test_get_time_interval_to_set_activities(async_client: AsyncClient, db
         has_items_to_fill=True,
         is_newbie_user=False,
         interval=schemas.TimeInterval(
-            from_date=activity.time + timedelta(hours=1),
+            from_date=activity.start_datetime_utc + timedelta(hours=1),
             to_date=current_clear_datetime - timedelta(hours=1)
         )
     )
+    assert response.json()['interval'] == expected_result.interval.model_dump(mode='json')
     assert response.json() == expected_result.model_dump(mode='json')
 
 
@@ -203,10 +205,9 @@ async def test_get_time_interval_for_newbie(async_client: AsyncClient, db_sessio
 
 async def test_get_empty_time_interval(async_client: AsyncClient, db_session: AsyncSession) -> None:
     fake_current_datetime = datetime(year=2025, month=4, day=15, hour=12, minute=30, second=8)
-    current_clear_datetime = datetime_to_clear_format(fake_current_datetime)
 
     user = get_random_user_model()
-    activity = get_random_activity_model(user_id=user.id, time=current_clear_datetime)
+    activity = get_random_activity_model(user_id=user.id)
     db_session.add_all([user, activity])
     await db_session.commit()
 

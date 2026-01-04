@@ -22,7 +22,7 @@ def get_random_user_model(
         notify_hours: Optional[List[int]] = None,
         time_zone_delta: Optional[int] = None,
 ):
-    """ Create random model of `User`. NO OBJECT CREATION IN DATABASE. """
+    """ Create a random model of `User`. NO OBJECT CREATION IN DATABASE. """
     joined_at = joined_at or get_random_datetime()
     last_activity = last_activity or get_random_datetime(from_date=joined_at)
     if notify_hours is None:
@@ -53,7 +53,7 @@ def get_random_user_base_schema(
 
 
 async def get_user_from_db(db_session: AsyncSession, user_id: int) -> User:
-    """ Get User model from database by id. """
+    """ Get the User model from the database by id. """
     select_stmt = select(User).where(User.id == user_id)
     result = await db_session.execute(select_stmt)
     return result.scalars().first()
