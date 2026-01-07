@@ -108,7 +108,7 @@ class UserRepo(BaseRepo):
         result = await self.session.execute(select_stmt)
         return result.scalar_one()
 
-    async def get_last_activity(self, user_id: int) -> Optional[Activity]:
+    async def get_latest_activity(self, user_id: int) -> Optional[Activity]:
         """
         Get last created activity by user with `user_id`,
         :param user_id: The user's telegram ID in the database.

@@ -34,7 +34,7 @@ class ActivityTrackerService:
         :param max_missing_slots: The maximum missing slots (hours) to return.
         :return: MissingSlotsDateRange or None if there are no missing slots.
         """
-        last_activity = await self.db.users.get_last_activity(self.user_id)
+        last_activity = await self.db.users.get_latest_activity(self.user_id)
         utc_now = utcnow()
         is_new_user = last_activity is None
 

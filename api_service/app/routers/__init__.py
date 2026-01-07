@@ -1,8 +1,9 @@
-from . import healthcheck, users
+from . import healthcheck, users, notifications
 
 routers_list = [
     healthcheck.router,
     users.router,
+    notifications.router,
 ]
 
 __all__ = [

@@ -1,5 +1,5 @@
 from datetime import datetime, date, time
-from typing import List
+from typing import List, Literal
 
 from annotated_types import Gt, Ge, Le
 from pydantic import BaseModel, ConfigDict, field_serializer, Field, field_validator
@@ -19,11 +19,11 @@ class UserBase(BaseModel):
     language: str
 
 
-class UserNotifyHoursOut(BaseModel):
+class UserNotificationsSettingsOut(BaseModel):
     notify_hours: List[HourNumber]
 
 
-class UserNotifyHoursIn(BaseModel):
+class UserNotificationsSettingsIn(BaseModel):
     notify_hours: List[HourNumber] = Field(..., max_length=24)
 
     @field_validator("notify_hours", mode="after")
@@ -55,9 +55,10 @@ class UserActivitySummary(BaseModel):
 class UserActivitiesSummaryOut(BaseModel):
     data: List[UserActivitySummary]
 
-
-class UsersToNotifyOut(BaseModel):
+class PendingNotificationsOut(BaseModel):
+    type: Literal['set_activities_reminder']
     user_ids: List[int]
+    total_notifications: int
 
 
 class ActivityBase(BaseModel):
