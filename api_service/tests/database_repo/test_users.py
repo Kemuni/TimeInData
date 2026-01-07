@@ -4,8 +4,8 @@ from datetime import datetime, timedelta, UTC, date
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database.models import Activity
-from database.repositories import UserRepo
+from app.database.models import Activity
+from app.database.repositories import UserRepo
 from tests.utils.activity import get_random_activity_model, get_random_activity_base
 from tests.utils.user import get_random_user_model, get_random_telegram_id, get_user_from_db
 from tests.utils.utils import get_random_lower_string

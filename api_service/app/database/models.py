@@ -10,7 +10,7 @@ from sqlalchemy.orm import mapped_column
 from sqlalchemy.sql.expression import text
 from sqlalchemy.sql.schema import CheckConstraint, Index
 
-from .func import db_utcnow
+from app.database.func import db_utcnow
 
 
 class Base(DeclarativeBase):
@@ -56,14 +56,14 @@ class User(Base):
 
 
 class ActivityTypes(str, enum.Enum):
-    SLEEP = "sleep"
-    WORK = "work"
-    STUDY = "study"
-    FAMILY = "family"
-    FRIENDS = "friends"
-    RELAX = "relax"
+    SLEEP = "SLEEP"
+    WORK = "WORK"
+    STUDY = "STUDY"
+    FAMILY = "FAMILY"
+    FRIENDS = "FRIENDS"
+    RELAX = "RELAX"
     SPORT = "SPORT"
-    GAMES = "games"
+    GAMES = "GAMES"
 
 
 class Activity(Base):

@@ -4,8 +4,8 @@ from typing import Optional, List
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-import schemas
-from database.models import User
+from app import schemas
+from app.database.models import User
 from tests.utils.utils import get_random_lower_string, get_random_datetime, get_random_number
 
 

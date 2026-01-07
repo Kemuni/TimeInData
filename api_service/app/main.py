@@ -2,9 +2,9 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from config import get_config
-from logger.log_conf import LOGGING_CONFIG
-from routers import routers_list
+from app.config import get_config
+from app.logger.log_conf import LOGGING_CONFIG
+from app.routers import routers_list
 
 
 def init_app() -> FastAPI:
@@ -26,7 +26,7 @@ def init_app() -> FastAPI:
 
 def main() -> None:
     uvicorn.run(
-        "__main__:app",
+        "app.main:app",
         host=get_config().api.host,
         port=get_config().api.port,
         log_config=LOGGING_CONFIG,

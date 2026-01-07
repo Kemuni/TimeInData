@@ -5,9 +5,9 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.expression import desc
 
-import schemas
-from .func import db_utcnow
-from .models import User, Activity, Base, ActivityTypes
+from app import schemas
+from app.database.func import db_utcnow
+from app.database.models import User, Activity, Base, ActivityTypes
 
 
 class BaseRepo:

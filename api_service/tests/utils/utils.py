@@ -49,15 +49,3 @@ def datetime_to_clear_format(custom_datetime: datetime) -> datetime:
         custom_datetime.day,
         custom_datetime.hour,
     ).replace(tzinfo=None)
-
-
-@contextmanager
-def patch_utcnow(module_name: str, return_value: datetime) -> Generator[None, None, None]:
-    """
-    Patch `utcnow` from `utils` in module `module_name` to return `return_value`.
-    :param module_name: The module name, for example `routers.users`.
-    :param return_value: The value to return.
-    """
-    with patch(f'{module_name}.utcnow') as mock_utcnow:
-        mock_utcnow.return_value = return_value
-        yield

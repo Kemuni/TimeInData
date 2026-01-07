@@ -2,8 +2,8 @@ import random
 from datetime import date
 from typing import Optional
 
-import schemas
-from database.models import ActivityTypes, Activity
+from app import schemas
+from app.database.models import ActivityTypes, Activity
 from tests.utils.utils import get_random_number, get_random_datetime
 
 ACTIVITY_TYPES_ARRAY = [i for i in ActivityTypes]

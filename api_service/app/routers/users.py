@@ -1,17 +1,16 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import List, Annotated, Optional
 
 from fastapi import APIRouter, Depends, status, Body, HTTPException, Response
-from pydantic import Field
+from loguru import logger
 from sqlalchemy.exc import IntegrityError
 from starlette.responses import JSONResponse
 
-import schemas
-from database.repositories import DatabaseRepo
-from dependencies import get_db
-from loguru import  logger
-
-from utils.utcnow import utcnow
+from app import schemas
+from app.database.repositories import DatabaseRepo
+from app.dependencies import get_db
+from app.services.ActivityTrackerService import ActivityTrackerService
+from app.utils.utcnow import utcnow
 
 router = APIRouter(prefix='/users', tags=['users'])
 
@@ -65,59 +64,48 @@ async def get_last_activity(
 
 
 @router.get(
-    '/{user_id}/activities/time_interval',
+    '/{user_id}/activities/closest_missing_slots',
     description='''
-    Get the time interval to set activities for user with `user_id`. For newbie users, we display fewer hours.
-    For example `["2025.02.01 11:00", "2025.02.02 13:00"]` result means that you have to set activities in 
-    11:00, 12:00 and 13:00 time. So, **from_date and to_date are inclusive** in the interval.
+    Get the closest missing slots to set activities for user with `user_id`. For newbie users, we display fewer hours.
     '''
 )
-async def get_time_interval_to_set_activities(
+async def get_activities_closest_missing_slots(
         user_id: schemas.TelegramUserId,
-        max_hours_delta: Optional[int] = 24,
-        newbie_hours_delta: Optional[int] = 6,
+        max_missing_slots: Optional[int] = 24,
         db: DatabaseRepo = Depends(get_db),
-) -> schemas.TimeIntervalResponse:
+) -> schemas.MissingActivitySlotsOut:
     """
-    Get the time interval to set activities for user with `user_id`. For newbie users, we display fewer hours.
-    For example [2025.02.01 11:00, 2025.02.02 13:00] result means that you have to set 11:00, 12:00, 13:00 activities.
+    Get the closest missing slots to set activities for user with `user_id`. For newbie users, we display fewer
+    slots (6 slots).
 
     :param user_id: The user's telegram ID.
-    :param max_hours_delta: The maximum hours delta in the interval.
-    :param newbie_hours_delta: The hour delta in the interval for newbie user.
+    :param max_missing_slots: The maximum missing slots to display.
     :param db: The database repository.
-    :return: Time interval to set activities.
+    :return: Data about missing slots to set activities.
     """
-    last_activity = await db.users.get_last_activity(user_id)
-    utc_now = utcnow()
-    is_newbie_user = last_activity is None
-
-    if is_newbie_user:
-        max_hours_delta = newbie_hours_delta
-        from_date = datetime(utc_now.year, utc_now.month, utc_now.day, utc_now.hour) - timedelta(hours=max_hours_delta)
-    else:
-        from_date = last_activity.start_datetime_utc + timedelta(hours=1)
-
-    to_date = min(
-        from_date + timedelta(hours=max_hours_delta),
-        # if now is 22:33, we can set activity only to 21:00, so we subtract 1 hour
-        datetime(utc_now.year, utc_now.month, utc_now.day, utc_now.hour - 1)
-    )
-    has_items_to_fill = (utc_now - from_date) > timedelta(hours=1)
-
-    if has_items_to_fill:
-        return schemas.TimeIntervalResponse(
-            has_items_to_fill=has_items_to_fill,
-            is_newbie_user=is_newbie_user,
-            interval= schemas.TimeInterval(
-                from_date=from_date,
-                to_date=to_date,
-            ),
+    # Get missing slots date range
+    activity_tracker = ActivityTrackerService(db, user_id)
+    date_range = await activity_tracker.get_closest_missing_slots_date_range(max_missing_slots)
+    if date_range is None:
+        return schemas.MissingActivitySlotsOut(
+            has_missing_slots=False, date_range=None, missing_slots=None, total_missing=0,
         )
-    return schemas.TimeIntervalResponse(
-        has_items_to_fill=has_items_to_fill,
-        is_newbie_user=is_newbie_user,
-        interval=None,
+    from_date, to_date = date_range.from_date, date_range.to_date
+
+    # Calculating slots
+    missing_slots = [
+        schemas.MissingActivitySlot(
+            utc_date=(from_date.date() + timedelta(days=((from_date.hour + i) // 24))),
+            utc_hour=(from_date.hour + i) % 24
+        )
+        for i in range(date_range.total_hours)
+    ]
+
+    return schemas.MissingActivitySlotsOut(
+        has_missing_slots=True,
+        date_range=schemas.DateRange(from_date=from_date, to_date=to_date),
+        missing_slots=missing_slots,
+        total_missing=date_range.total_hours,
     )
 
 

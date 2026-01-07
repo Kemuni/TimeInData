@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, field_serializer, Field, field_valid
 from pydantic_core._pydantic_core import PydanticCustomError
 from typing_extensions import Annotated, Optional
 
-from database.models import ActivityTypes
+from app.database.models import ActivityTypes
 
 TelegramUserId = Annotated[int, Gt(0)]
 HourNumber = Annotated[int, Ge(0), Le(23)]
@@ -81,12 +81,18 @@ class ActivityOut(ActivityBase):
     id: int
 
 
-class TimeInterval(BaseModel):
+class MissingActivitySlot(BaseModel):
+    utc_date: date
+    utc_hour: int
+
+
+class DateRange(BaseModel):
     from_date: datetime
     to_date: datetime
 
 
-class TimeIntervalResponse(BaseModel):
-    has_items_to_fill: bool
-    is_newbie_user: bool
-    interval: Optional[TimeInterval] = None
+class MissingActivitySlotsOut(BaseModel):
+    has_missing_slots: bool
+    date_range: Optional[DateRange] = None
+    missing_slots: Optional[List[MissingActivitySlot]] = None
+    total_missing: int

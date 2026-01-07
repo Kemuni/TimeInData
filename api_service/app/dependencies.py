@@ -1,7 +1,7 @@
 from typing import AsyncGenerator
 
-from database.db import AsyncSessionLocal
-from database.repositories import DatabaseRepo
+from app.database.db import AsyncSessionLocal
+from app.database.repositories import DatabaseRepo
 
 
 async def get_db() -> AsyncGenerator[DatabaseRepo, None]:

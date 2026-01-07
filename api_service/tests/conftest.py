@@ -7,9 +7,9 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncEngine, AsyncSession
 from testcontainers.postgres import PostgresContainer
 
-from database.models import Base
-from database.repositories import DatabaseRepo
-from dependencies import get_db
+from app.database.models import Base
+from app.database.repositories import DatabaseRepo
+from app.dependencies import get_db
 
 
 @pytest.fixture(scope="session")
@@ -58,7 +58,7 @@ async def db_session(db_engine: AsyncEngine) -> AsyncGenerator[AsyncSession, Non
 
 @pytest.fixture
 def app() -> Generator[FastAPI, None, None]:
-    from app import app
+    from app.main import app
 
     yield app
 
