@@ -120,7 +120,7 @@ async def test_get_last_activity(db_session: AsyncSession) -> None:
 
     user_repo = UserRepo(session=db_session)
 
-    last_activity = await user_repo.get_last_activity(user.id)
+    last_activity = await user_repo.get_latest_activity(user.id)
     assert last_activity is None
 
     activity1 = get_random_activity_model(
@@ -132,7 +132,7 @@ async def test_get_last_activity(db_session: AsyncSession) -> None:
     db_session.add_all([activity1, activity2])
     await db_session.commit()
 
-    last_activity = await user_repo.get_last_activity(user.id)
+    last_activity = await user_repo.get_latest_activity(user.id)
     assert last_activity.id == activity1.id
     assert last_activity.user_id == activity1.user_id
     assert last_activity.utc_date == activity1.utc_date

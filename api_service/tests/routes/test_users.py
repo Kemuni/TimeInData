@@ -39,58 +39,32 @@ async def test_create_or_update(async_client: AsyncClient, db_session: AsyncSess
     assert db_user.language == user_base.language
 
 
-async def test_get_users_to_notify(async_client: AsyncClient, db_session: AsyncSession) -> None:
-    # Test empty result
-    response = await async_client.get('/users/to_notify')
-
-    assert response.status_code == status.HTTP_200_OK
-
-    expected_result = schemas.UsersToNotifyOut(user_ids=[])
-    assert response.json() == expected_result.model_dump()
-
-    # Test non-empty result
-    user1 = get_random_user_model(notify_hours=[1, 2, 3])
-    user2 = get_random_user_model(notify_hours=[3, 4, 5])
-    user3 = get_random_user_model(notify_hours=[5, 6, 7])
-    db_session.add_all([user1, user2, user3])
-    await db_session.commit()
-
-    fixed_datetime = datetime(year=2025, month=4, day=15, hour=3, minute=0, second=0)
-    with freeze_time(fixed_datetime):
-        response = await async_client.get('/users/to_notify')
-
-    assert response.status_code == status.HTTP_200_OK
-
-    expected_result = schemas.UsersToNotifyOut(user_ids=[user1.id, user2.id])
-    assert response.json() == expected_result.model_dump()
-
-
-async def test_update_notify_hours(async_client: AsyncClient, db_session: AsyncSession) -> None:
+async def test_update_notifications_settings(async_client: AsyncClient, db_session: AsyncSession) -> None:
     user = get_random_user_model(notify_hours=[1, 2, 3])
     db_session.add(user)
     await db_session.commit()
 
-    response = await async_client.put(f'/users/{user.id}/notify_hours', json={'notify_hours': [4, 5, 6]})
+    response = await async_client.put(f'/users/{user.id}/settings/notifications', json={'notify_hours': [4, 5, 6]})
     assert response.status_code == status.HTTP_200_OK
     assert response.text == "User's notify hours has been updated."
 
     db_user = await get_user_from_db(db_session, user.id)
     assert db_user.notify_hours == [4, 5, 6]
 
-    response = await async_client.put(f'/users/{user.id}/notify_hours', json={'notify_hours': []})
+    response = await async_client.put(f'/users/{user.id}/settings/notifications', json={'notify_hours': []})
     assert response.status_code == status.HTTP_200_OK
 
     db_user = await get_user_from_db(db_session, user.id)
     assert len(db_user.notify_hours) == 0
 
 
-async def test_update_notify_hours_incorrect_body(async_client: AsyncClient, db_session: AsyncSession) -> None:
+async def test_update_notification_settings_incorrect_body(async_client: AsyncClient, db_session: AsyncSession) -> None:
     user = get_random_user_model()
     db_session.add(user)
     await db_session.commit()
 
     async def try_update_notify_hours(notify_hours: list[int], error_msg: Optional[str] = None) -> None:
-        response = await async_client.put(f'/users/{user.id}/notify_hours', json={'notify_hours': notify_hours})
+        response = await async_client.put(f'/users/{user.id}/settings/notifications', json={'notify_hours': notify_hours})
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
         if error_msg:
             assert response.json()['detail'][0]['msg'] == error_msg
@@ -103,37 +77,37 @@ async def test_update_notify_hours_incorrect_body(async_client: AsyncClient, db_
     await try_update_notify_hours([5, 5, 6], error_msg='Notify hours in the list must be unique.')
 
 
-async def test_get_notify_hours(async_client: AsyncClient, db_session: AsyncSession) -> None:
+async def test_get_notification_settings(async_client: AsyncClient, db_session: AsyncSession) -> None:
     user = get_random_user_model(notify_hours=[1, 2, 3])
     db_session.add(user)
     await db_session.commit()
 
-    response = await async_client.get(f'/users/{user.id}/notify_hours')
+    response = await async_client.get(f'/users/{user.id}/settings/notifications')
     assert response.status_code == status.HTTP_200_OK
 
-    expected_result = schemas.UserNotifyHoursOut(notify_hours=[1, 2, 3])
+    expected_result = schemas.UserNotificationsSettingsOut(notify_hours=[1, 2, 3])
     assert response.json() == expected_result.model_dump()
 
 
-async def test_get_empty_notify_hours(async_client: AsyncClient, db_session: AsyncSession) -> None:
+async def test_get_empty_notification_settings(async_client: AsyncClient, db_session: AsyncSession) -> None:
     user = get_random_user_model(notify_hours=[])
     db_session.add(user)
     await db_session.commit()
 
-    response = await async_client.get(f'/users/{user.id}/notify_hours')
+    response = await async_client.get(f'/users/{user.id}/settings/notifications')
     assert response.status_code == status.HTTP_200_OK
 
-    expected_result = schemas.UserNotifyHoursOut(notify_hours=[])
+    expected_result = schemas.UserNotificationsSettingsOut(notify_hours=[])
     assert response.json() == expected_result.model_dump()
 
 
-async def test_get_last_activity(async_client: AsyncClient, db_session: AsyncSession) -> None:
+async def test_get_latest_activity(async_client: AsyncClient, db_session: AsyncSession) -> None:
     user = get_random_user_model()
     activity = get_random_activity_model(user_id=user.id)
     db_session.add_all([user, activity])
     await db_session.commit()
 
-    response = await async_client.get(f'/users/{user.id}/activities/last')
+    response = await async_client.get(f'/users/{user.id}/activities/latest')
     assert response.status_code == status.HTTP_200_OK
 
     expected_result = schemas.ActivityOut(
@@ -145,12 +119,12 @@ async def test_get_last_activity(async_client: AsyncClient, db_session: AsyncSes
     assert response.json() == expected_result.model_dump(mode='json')
 
 
-async def test_get_empty_last_activity(async_client: AsyncClient, db_session: AsyncSession) -> None:
+async def test_get_empty_latest_activity(async_client: AsyncClient, db_session: AsyncSession) -> None:
     user = get_random_user_model()
     db_session.add(user)
     await db_session.commit()
 
-    response = await async_client.get(f'/users/{user.id}/activities/last')
+    response = await async_client.get(f'/users/{user.id}/activities/latest')
     assert response.status_code == status.HTTP_200_OK
     assert response.json() is None
 
@@ -166,7 +140,7 @@ async def test_get_closet_missing_slots_to_set_activities(async_client: AsyncCli
     await db_session.commit()
 
     with freeze_time(fake_current_datetime):
-        response = await async_client.get(f'/users/{user.id}/activities/closest_missing_slots')
+        response = await async_client.get(f'/users/{user.id}/activities/missing_slots/closest')
     assert response.status_code == status.HTTP_200_OK
 
     expected_result = schemas.MissingActivitySlotsOut(
@@ -195,7 +169,7 @@ async def test_get_closets_missing_slots_for_newbie(async_client: AsyncClient, d
     await db_session.commit()
 
     with freeze_time(fake_current_datetime):
-        response = await async_client.get(f'/users/{user.id}/activities/closest_missing_slots')
+        response = await async_client.get(f'/users/{user.id}/activities/missing_slots/closest')
     assert response.status_code == status.HTTP_200_OK
 
     expected_date_range = schemas.DateRange(
@@ -227,7 +201,7 @@ async def test_get_empty_closets_missing_slots(async_client: AsyncClient, db_ses
     await db_session.commit()
 
     with freeze_time(fake_current_datetime):
-        response = await async_client.get(f'/users/{user.id}/activities/closest_missing_slots')
+        response = await async_client.get(f'/users/{user.id}/activities/missing_slots/closest')
     assert response.status_code == status.HTTP_200_OK
 
     expected_result = schemas.MissingActivitySlotsOut(
