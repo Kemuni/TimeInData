@@ -1,7 +1,4 @@
-from typing import Any
-
-
-LOGGING_CONFIG: dict[str, Any] = {
+LOGGING_CONFIG = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
@@ -14,22 +11,8 @@ LOGGING_CONFIG: dict[str, Any] = {
             "()": "uvicorn.logging.AccessFormatter",
             "fmt": '%(asctime)s - %(name)s - %(levelprefix)s  %(client_addr)s - "%(request_line)s" %(status_code)s', # noqa: E501
         },
-        "access_file": {
-            "()": "uvicorn.logging.AccessFormatter",
-            "fmt": '%(asctime)s - %(name)s - %(levelprefix)s  %(client_addr)s - "%(request_line)s" %(status_code)s', # noqa: E501
-            "use_colors": False,
-        },
     },
     "handlers": {
-        "file_handler": {
-            "formatter": "access_file",
-            "class": "logging.handlers.RotatingFileHandler",
-            "filename" : "../logs/api_service.log",
-            "mode" : "a+",
-            "maxBytes" : 10*1024*1024,
-            "backupCount": 0,
-        },
-
         "default": {
             "formatter": "default",
             "class": "logging.StreamHandler",
@@ -44,6 +27,6 @@ LOGGING_CONFIG: dict[str, Any] = {
     "loggers": {
         "uvicorn": {"handlers": ["default"], "level": "INFO", "propagate": False},
         "uvicorn.error": {"level": "INFO"},
-        "uvicorn.access": {"handlers": ["access", "file_handler"], "level": "INFO", "propagate": False},
+        "uvicorn.access": {"handlers": ["access"], "level": "INFO", "propagate": False},
     },
 }
