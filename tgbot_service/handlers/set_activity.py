@@ -5,12 +5,13 @@ from aiogram import Router, F
 from aiogram import types
 from aiogram.enums import ContentType
 from aiogram.filters import Command
-from aiogram_dialog import DialogManager, Dialog, Window, StartMode, ShowMode
+from aiogram_dialog import DialogManager, Dialog, Window, StartMode
 from aiogram_dialog.widgets.input import MessageInput
 from aiogram_dialog.widgets.kbd import Cancel, Checkbox
 from aiogram_dialog.widgets.text import Const, Format
 
-from APIParser import APIParser, ActivityBaseIn, ActivityTypes, Activity
+from api_parser import APIParser
+from api_parser.types import ActivityBaseIn, ActivityTypes, Activity
 from states.set_activity import SetActivityDialogSG
 
 
