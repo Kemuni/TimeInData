@@ -18,7 +18,7 @@ async def test_get_set_activities_reminder_pending_notifications(async_client: A
     expected_result = schemas.PendingNotificationsOut(
         user_ids=[], type='set_activities_reminder', total_notifications=0,
     )
-    assert response.json() == expected_result.model_dump()
+    assert response.json() == schemas.APIResponse(success=True, data=expected_result, error=None).model_dump()
 
     # Test non-empty result
     user1 = get_random_user_model(notify_hours=[1, 2, 3])
@@ -38,4 +38,5 @@ async def test_get_set_activities_reminder_pending_notifications(async_client: A
         type='set_activities_reminder',
         total_notifications=2,
     )
-    assert response.json() == expected_result.model_dump()
+
+    assert response.json() == schemas.APIResponse(success=True, data=expected_result, error=None).model_dump()

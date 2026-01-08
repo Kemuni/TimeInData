@@ -187,7 +187,7 @@ async def test_get_activities_summary(db_session: AsyncSession) -> None:
     db_session.add(user)
     await db_session.commit()
 
-    activities = [get_random_activity_model(user_id=user.id) for _ in range(10)]
+    activities = [get_random_activity_model(user_id=user.id, utc_hour=i) for i in range(10)]
     db_session.add_all(activities)
     await db_session.commit()
 

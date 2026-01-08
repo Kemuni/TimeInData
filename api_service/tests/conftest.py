@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from typing import Generator, AsyncGenerator
 
 import pytest
@@ -66,6 +67,13 @@ def app() -> Generator[FastAPI, None, None]:
 @pytest.fixture
 async def async_client(app: FastAPI, db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
     """ Override `get_db` dependency in application and return FastAPI test client """
+    # Mocking lifespan to prevent starting scheduler and message publisher
+    @asynccontextmanager
+    async def empty_lifespan(_: FastAPI):
+        yield
+
+    app.router.lifespan_context = empty_lifespan
+
     def override_get_db() -> DatabaseRepo:
         return DatabaseRepo(session=db_session)
 
