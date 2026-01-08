@@ -1,6 +1,7 @@
 import enum
 
 from faststream.rabbit import RabbitBroker
+from loguru import logger
 
 from app.config import get_config, RabbitMQConfig
 
@@ -24,13 +25,13 @@ class MessagePublisher:
     async def stop(self):
         await self.broker.stop()
 
-    async def publish_set_activities_reminder(self, user_ids: list[int]):
+    async def publish_set_activities_reminder(self, user_ids: list[int]) -> None:
         await self.reminder_publisher.publish(
-            message={"user_id": user_ids, "type": ReminderMessageType.SET_ACTIVITIES},
+            message={"user_ids": user_ids, "type": ReminderMessageType.SET_ACTIVITIES},
             expiration=60 * 60,  # 1 hour
             persist=True,
         )
-
+        logger.info(f'Published "SET_ACTIVITIES" reminder for {user_ids}')
 
 
 message_publisher = MessagePublisher(get_config().rabbitmq)

@@ -2,10 +2,12 @@
 import logging
 from typing import Optional
 
-from loguru import logger
 from tenacity import after_log, before_log, retry, stop_after_attempt, wait_fixed
 
 from APIParser import APIParser
+
+
+logger = logging.getLogger(__name__)
 
 
 class UnableConnectToAPIError(Exception):
@@ -20,8 +22,8 @@ class UnableConnectToAPIError(Exception):
 @retry(
     stop=stop_after_attempt(60 * 1),  # 60 attempts ~ 1 minute
     wait=wait_fixed(1),
-    before=before_log(logger, logging.INFO),
-    after=after_log(logger, logging.WARN),
+    before=before_log(logging.getLogger(__name__), logging.INFO),
+    after=after_log(logging.getLogger(__name__), logging.WARN),
 )
 async def check_api_service_connection() -> None:
     """ Checking that we are able to connect to our API service. We try to do this for 5 minutes. """

@@ -11,12 +11,12 @@ router = Router(name=__name__)
 ACTIVITY_TO_EMOJI: Dict[ActivityTypes, str] = {
     ActivityTypes.SLEEP: '🛏️',
     ActivityTypes.WORK: '💵',
-    ActivityTypes.STUDYING: '🏫',
+    ActivityTypes.STUDY: '🏫',
     ActivityTypes.FAMILY: '👪',
     ActivityTypes.FRIENDS: '👥',
-    ActivityTypes.PASSIVE: '💆‍♂️',
-    ActivityTypes.EXERCISE: '💪',
-    ActivityTypes.READING: '📚',
+    ActivityTypes.RELAX: '💆‍♂️',
+    ActivityTypes.SPORT: '💪',
+    ActivityTypes.GAMES: '🎮',
 }
 
 

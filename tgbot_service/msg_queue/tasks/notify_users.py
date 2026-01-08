@@ -1,10 +1,11 @@
 import asyncio
 
 from aiogram import exceptions, Bot
+from aiogram.enums import ParseMode
+from aiogram.client.default import DefaultBotProperties
 from aiohttp import web
 from loguru import logger
 
-from APIParser import APIParser
 from config import get_config
 
 routes = web.RouteTableDef()
@@ -14,13 +15,13 @@ MAX_MSG_RETRIES: int = 5
 
 async def send_message(bot: Bot, user_id: int, text: str, retry_counter: int = 0) -> bool:
     """
-    Safely send message to the user.
+    Safely send a message to the user.
 
     :param bot: Aiogram instance of the bot.
-    :param user_id: The telegram ID of the recipient of the message.
+    :param user_id: The telegram ID of the message recipient.
     :param text: The text of message.
     :param retry_counter: Current number of attempts of message sending.
-    :return: True if message was successfully sent, False otherwise.
+    :return: True if the message was successfully sent, False otherwise.
     """
     try:
         await bot.send_message(user_id, text)
@@ -37,28 +38,27 @@ async def send_message(bot: Bot, user_id: int, text: str, retry_counter: int = 0
     except exceptions.TelegramAPIError:
         logger.exception(f"Target [ID:{user_id}]: Failed")
     else:
-        logger.info(f"Target [ID:{user_id}]: Message has been sent.")
+        logger.debug(f"Target [ID:{user_id}]: Message has been sent.")
         return True
     return False
 
 
-@routes.get("/tasks/tgbot/notify_users")
-async def notify_users(request: web.Request) -> web.Response:
-    """ Send message to all users who must be notified about setting activity """
-    bot = Bot(token=get_config().tg_bot.token.get_secret_value(), parse_mode="HTML")
-    async with APIParser.create_client() as client:
-        user_ids = await APIParser(client).get_users_to_notify()
+async def send_bunch_messages(user_ids: list[int], text: str) -> None:
+    """ Send a message to all users with id in `user_ids` """
+    bot = Bot(
+        token=get_config().tg_bot.token.get_secret_value(),
+        default=DefaultBotProperties(parse_mode=ParseMode.HTML)
+    )
 
+    logger.info(f'Sending {len(user_ids)} notifications...')
     message_counter = 0
     try:
         for user_id in user_ids:
             is_success = await send_message(
-                bot, user_id, "It's time to set your activity! Type /set_activity command"
+                bot, user_id, text
             )
             message_counter += 1 if is_success else 0
             await asyncio.sleep(0.05)
     finally:
-        logger.info(f'{message_counter} from {len(user_ids)} notifications was successfully sent.')
-
-    await bot.session.close()
-    return web.Response(status=200, text="Notification successfully sent.")
+        logger.info(f'{message_counter}/{len(user_ids)} notifications was successfully sent.')
+        await bot.session.close()
