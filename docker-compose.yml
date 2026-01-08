@@ -9,10 +9,13 @@ services:
       POSTGRES_USER: ${POSTGRES_USER?Variable not set}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD?Variable not set}
       POSTGRES_DB: ${POSTGRES_DB?Variable not set}
+      # format: "${DB_NAME},${DB_OWNER}:${DB_NAME},${DB_OWNER}......"
+      POSTGRES_MULTIPLE_DATABASES: "${POSTGRES_JOB_STORE_DB},${POSTGRES_USER}"
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 5s
@@ -37,9 +40,12 @@ services:
     image: rabbitmq:3.13-management-alpine
     container_name: rabbitmq
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME?Variable not set}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD?Variable not set}
+      RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_VHOST?Variable not set}
     ports:
       - "5672:5672"
       - "15672:15672"
@@ -66,6 +72,11 @@ services:
       POSTGRES_DB: ${POSTGRES_DB?Variable not set}
       POSTGRES_SERVER: postgres
       POSTGRES_PORT: ${POSTGRES_PORT?Variable not set}
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME?Variable not set}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD?Variable not set}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: ${RABBITMQ_PORT?Variable not set}
+      RABBITMQ_VHOST: ${RABBITMQ_VHOST?Variable not set}
       API_HOST: 0.0.0.0
       API_PORT: 8000
     ports:
