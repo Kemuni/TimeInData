@@ -1,6 +1,7 @@
 import os
 from functools import lru_cache
 from typing import Optional
+from urllib.parse import quote
 
 from loguru import logger
 from pydantic import SecretStr, RedisDsn
@@ -39,9 +40,44 @@ class TgBotConfig(BaseSettings):
     host: str
     port: int = 8080
 
-    task_set_activity_notification_url: str
-
+    domain: Optional[str] = None
     webhook_path: str = '/webhook'
+
+
+class RabbitMQConfig(BaseSettings):
+    """
+    RabbitMQ configuration class.
+    Contain all settings for RabbitMQ.
+
+    Attributes
+    ----------
+    username: str
+        The username of account for connecting to the broker.
+    password: str
+        The password of account for connecting to the broker.
+    host: str
+        The host where the broker is located.
+    port: int
+        The port of broker.
+    vhost: str
+        The virtual host to connect to (for task isolation).
+    reminder_queue_name: str
+        The name of the queue for reminders.
+    """
+    model_config = get_base_model_config() | SettingsConfigDict(env_prefix='RABBITMQ_')
+
+    username: str = 'guest'
+    password: str = 'guest'
+    host: str = 'localhost'
+    port: int = 5672
+    vhost: str = 'time_in_data_vhost'
+
+    reminder_queue_name: str = 'reminder_queue'
+
+    @property
+    def url(self) -> str:
+        """ Build a RabbitMQ DSN from config. """
+        return f"amqp://{self.username}:{quote(self.password)}@{self.host}:{self.port}/{self.vhost}"
 
 
 class MessagesTextConfig(BaseSettings):
@@ -109,7 +145,6 @@ class Config(BaseSettings):
 
     debug: bool = 0
 
-    tg_bot_domain: str
     tg_bot: TgBotConfig = TgBotConfig()
 
     msg_texts: MessagesTextConfig = MessagesTextConfig()
@@ -117,6 +152,7 @@ class Config(BaseSettings):
     api_domain: str
 
     redis: RedisConfig = RedisConfig()
+    rabbitmq: RabbitMQConfig = RabbitMQConfig()
 
 
 @lru_cache

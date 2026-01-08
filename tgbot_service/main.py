@@ -1,6 +1,10 @@
+import asyncio
+import logging
 from typing import Union
 
 from aiogram import Bot, Dispatcher
+from aiogram.client.default import DefaultBotProperties
+from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage, SimpleEventIsolation
 from aiogram.fsm.storage.redis import RedisStorage, DefaultKeyBuilder
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
@@ -11,15 +15,15 @@ from tenacity import RetryError
 
 from config import get_config
 from handlers import routers_list
-from logger.logger import LoggerCustomizer
+from logger import configure_logger
 from middlewares.api_connection_middleware import APIConnectionMiddleware
 from pre_start_tasks import check_api_service_connection
-from tasks import task_routes_list
+from msg_queue.broker import rabbitmq_startup, rabbitmq_shutdown
 
 
 async def pre_start_tasks() -> None:
-    """ Complete all pre start tasks for successfully starting our service """
-    logger.info('Checking pre start tasks...')
+    """ Complete all pre-start tasks for successfully starting our service """
+    logger.info('Starting pre-start tasks...')
     startup_tasks = [
         check_api_service_connection(),
     ]
@@ -29,17 +33,29 @@ async def pre_start_tasks() -> None:
         except RetryError as e:
             logger.error(f"Caught error during pre task checking: {e}")
             raise e
-    logger.info('Finish pre start tasks!')
+    logger.info('Finish pre-start tasks!')
 
 async def on_startup(dispatcher: Dispatcher, bot: Bot) -> None:
     logger.info('Bot startup event begin...')
     await pre_start_tasks()
-    await bot.set_webhook(f"{get_config().tg_bot_domain}{get_config().tg_bot.webhook_path}")
+
+    if get_config().tg_bot.domain:
+        await bot.set_webhook(f"{get_config().tg_bot.domain}{get_config().tg_bot.webhook_path}")
+        logger.info('Webhook set successfully!')
+    else:
+        await bot.delete_webhook()
+        logger.info('Webhook deleted successfully!')
     register_middlewares(dispatcher)
     dispatcher.include_routers(*routers_list)
     setup_dialogs(dispatcher)
+    await rabbitmq_startup()
     logger.info('Bot startup event end!')
 
+
+async def on_shutdown() -> None:
+    logger.info('Bot shutdown event begin...')
+    await rabbitmq_shutdown()
+    logger.info('Bot shutdown event end!')
 
 def register_middlewares(dp: Dispatcher) -> None:
     """ Register middlewares for messages and callback queries. """
@@ -47,10 +63,10 @@ def register_middlewares(dp: Dispatcher) -> None:
         APIConnectionMiddleware(),
     ]
     for middleware in outer_middlewares:
-        logger.info(f'Registering middleware {middleware}...')
+        logger.info(f'Registering middleware {middleware.__class__.__name__}...')
         dp.message.outer_middleware(middleware)
         dp.callback_query.outer_middleware(middleware)
-        logger.info(f'Successfully registered middleware {middleware}!')
+        logger.info(f'Successfully registered middleware {middleware.__class__.__name__}!')
 
 
 def get_storage() -> Union[RedisStorage, MemoryStorage]:
@@ -65,22 +81,33 @@ def get_storage() -> Union[RedisStorage, MemoryStorage]:
 
 
 def main() -> None:
-    LoggerCustomizer.init_loggers()
+    configure_logger(
+        level=logging.DEBUG if get_config().debug else logging.INFO,
+        supress_loggers=('httpx', 'httpcore')
+    )
 
     # Creating main instances of aiogram for handling telegram user updates
-    bot = Bot(token=get_config().tg_bot.token.get_secret_value(), parse_mode="HTML")
-    dp = Dispatcher(storage=get_storage(), events_isolation=SimpleEventIsolation())
+    bot = Bot(
+        token=get_config().tg_bot.token.get_secret_value(),
+        default=DefaultBotProperties(parse_mode=ParseMode.HTML)
+    )
+    dp = Dispatcher(storage=get_storage(), events_isolation=SimpleEventIsolation(), skip_updates=True)
     dp.startup.register(on_startup)
+    dp.shutdown.register(on_shutdown)
 
-    # Create and setup AioHttp instances for aiogram updates to set up webhook
-    app = web.Application()
-    webhook_requests_handler = SimpleRequestHandler(dispatcher=dp, bot=bot)
-    webhook_requests_handler.register(app, path=get_config().tg_bot.webhook_path)
-    setup_application(app, dp, bot=bot)
-    app.router.add_routes(*task_routes_list)
+    if get_config().tg_bot.domain:
+        # Create and setup AioHttp instances for aiogram updates to set up webhook
+        app = web.Application()
+        webhook_requests_handler = SimpleRequestHandler(dispatcher=dp, bot=bot)
+        webhook_requests_handler.register(app, path=get_config().tg_bot.webhook_path)
+        setup_application(app, dp, bot=bot)
 
-    # Last step. Run application
-    web.run_app(app, host=get_config().tg_bot.host, port=get_config().tg_bot.port)
+        # Last step. Run application
+        logger.info('Running webhook server...')
+        web.run_app(app, host=get_config().tg_bot.host, port=get_config().tg_bot.port)
+    else:
+        logger.info('Starting polling...')
+        asyncio.run(dp.start_polling(bot))
 
 
 if __name__ == "__main__":
