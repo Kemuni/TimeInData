@@ -1,5 +1,5 @@
 from datetime import datetime, date, time
-from typing import List, Literal
+from typing import List, Literal, Any, Generic, TypeVar
 
 from annotated_types import Gt, Ge, Le
 from pydantic import BaseModel, ConfigDict, field_serializer, Field, field_validator
@@ -8,9 +8,29 @@ from typing_extensions import Annotated, Optional
 
 from app.database.models import ActivityTypes
 
+T = TypeVar('T')
+
+
 TelegramUserId = Annotated[int, Gt(0)]
 HourNumber = Annotated[int, Ge(0), Le(23)]
 TzDeltaNumber = Annotated[int, Ge(-12), Le(12)]
+
+
+class ErrorDetail(BaseModel):
+    """Standard error detail format"""
+    code: str
+    message: str
+
+
+class APIResponse(BaseModel, Generic[T]):
+    """Standard API response format"""
+    success: bool
+    data: Optional[T] = None
+    error: Optional[ErrorDetail] = None
+
+
+class MessageResponse(BaseModel):
+    message: str
 
 
 class UserBase(BaseModel):

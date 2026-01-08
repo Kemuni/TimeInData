@@ -2,9 +2,11 @@ from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi import FastAPI
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_config
+from app.utils.exception_handlers import pydantic_validation_exception_handler, general_exception_handler
 from app.logger.log_conf import LOGGING_CONFIG
 from app.msg_queue.message_publisher import message_publisher
 from app.routers import routers_list
@@ -44,6 +46,10 @@ def init_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    # Register exception handlers
+    application.add_exception_handler(RequestValidationError, pydantic_validation_exception_handler)
+    application.add_exception_handler(Exception, general_exception_handler)
 
     for router in routers_list:
         application.include_router(router)
