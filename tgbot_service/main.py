@@ -81,10 +81,7 @@ def get_storage() -> Union[RedisStorage, MemoryStorage]:
 
 
 def main() -> None:
-    configure_logger(
-        level=logging.DEBUG if get_config().debug else logging.INFO,
-        supress_loggers=('httpx', 'httpcore')
-    )
+    configure_logger(logging.INFO, supress_loggers=('httpx', 'httpcore'))
 
     # Creating main instances of aiogram for handling telegram user updates
     bot = Bot(

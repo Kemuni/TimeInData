@@ -51,4 +51,4 @@ def configure_logger(level: int = logging.INFO, supress_loggers: Iterable[str] =
     for logger_name in supress_loggers:
         logging.getLogger(logger_name).setLevel(logging.WARNING)
 
-    logger.info(f"Logger configured: level={level}, supress_loggers={supress_loggers}")
+    logger.info(f"Logger configured: level={logging.getLevelName(level)}, supress_loggers={supress_loggers}")
