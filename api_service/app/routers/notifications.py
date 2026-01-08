@@ -10,8 +10,11 @@ from app.utils.utcnow import utcnow
 router = APIRouter(prefix='/notifications', tags=['notifications'])
 
 
-@router.get('/set_activities_reminder/pending')
-async def get_set_activities_pending(db: DatabaseRepo = Depends(get_db)) -> JSONResponse:
+@router.get(
+    '/set_activities_reminder/pending',
+    response_model=schemas.APIResponse[schemas.PendingNotificationsOut],
+)
+async def get_set_activities_pending(db: DatabaseRepo = Depends(get_db)):
     """ Get users, which a needed to be notified (set activities) in the current UTC hour. """
     user_ids = await db.users.get_ids_to_notify(utcnow().hour) or []
     data = schemas.PendingNotificationsOut(
