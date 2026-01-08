@@ -24,7 +24,7 @@ async def lifespan(_: FastAPI):
     scheduler.add_job(
         remind_set_activities_job,
         'cron',
-        hour='*',
+        hour='*', minute='0',  # Every hour in 00 minutes
         id='remind_set_activities_job',
         replace_existing=True,
     )
