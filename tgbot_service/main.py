@@ -3,6 +3,7 @@ import logging
 from typing import Union
 
 from aiogram import Bot, Dispatcher
+from aiogram.types import BotCommand
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage, SimpleEventIsolation
@@ -38,6 +39,14 @@ async def pre_start_tasks() -> None:
 async def on_startup(dispatcher: Dispatcher, bot: Bot) -> None:
     logger.info('Bot startup event begin...')
     await pre_start_tasks()
+    await bot.set_my_commands(
+        commands=[
+            BotCommand(command='start', description='Start menu'),
+            BotCommand(command='settings', description='Open settings'),
+            BotCommand(command='set_activity', description='Set activities'),
+            BotCommand(command='summary', description='Get summary of your activities'),
+        ]
+    )
 
     if get_config().tg_bot.domain:
         await bot.set_webhook(f"{get_config().tg_bot.domain}{get_config().tg_bot.webhook_path}")
