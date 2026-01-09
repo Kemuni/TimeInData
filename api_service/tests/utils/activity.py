@@ -1,0 +1,43 @@
+import random
+from datetime import date
+from typing import Optional
+
+from app import schemas
+from app.database.models import ActivityTypes, Activity
+from tests.utils.utils import get_random_number, get_random_datetime
+
+ACTIVITY_TYPES_ARRAY = [i for i in ActivityTypes]
+
+
+def get_random_activity_type() -> ActivityTypes:
+    return random.choice(ACTIVITY_TYPES_ARRAY)
+
+
+def get_random_activity_model(
+        user_id: int,
+        _id: Optional[int] = None,
+        _type: Optional[ActivityTypes] = None,
+        utc_date: Optional[date] = None,
+        utc_hour: Optional[int] = None,
+):
+    """ Create a random model of `Activity`. NO OBJECT CREATION IN DATABASE. """
+    return Activity(
+        id=_id or get_random_number(),
+        user_id=user_id,
+        type=_type or get_random_activity_type(),
+        utc_date=utc_date or get_random_datetime().date(),
+        utc_hour=utc_hour if utc_hour is not None else get_random_number(0, 23),
+    )
+
+
+def get_random_activity_base(
+        _type: Optional[ActivityTypes] = None,
+        utc_date: Optional[date] = None,
+        utc_hour: Optional[int] = None,
+) -> schemas.ActivityBase:
+    """ Create a random schema of `ActivityBase`. """
+    return schemas.ActivityBase(
+        type=_type or get_random_activity_type(),
+        utc_date=utc_date or get_random_datetime().date(),
+        utc_hour=utc_hour or get_random_number(0, 23),
+    )

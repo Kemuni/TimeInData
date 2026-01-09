@@ -1,0 +1,167 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: postgres
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER?Variable not set}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD?Variable not set}
+      POSTGRES_DB: ${POSTGRES_DB?Variable not set}
+      # format: "${DB_NAME},${DB_OWNER}:${DB_NAME},${DB_OWNER}......"  !! "POSTGRES_DB" will be created automatically !!
+      POSTGRES_MULTIPLE_DATABASES: "${POSTGRES_JOB_STORE_DB},${POSTGRES_USER}"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_MAXMEMORY: 512mb
+      REDIS_APPENDONLY: "yes"
+    ports:
+      - "6379:6379"
+    command: >
+      redis-server
+      --requirepass ${REDIS_PASSWORD}
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+      --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: rabbitmq
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME?Variable not set}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD?Variable not set}
+      RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_VHOST?Variable not set}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api_service:
+    build:
+      context: ./api_service
+      dockerfile: Dockerfile
+    container_name: api_service
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DEBUG: "1"
+      POSTGRES_USER: ${POSTGRES_USER?Variable not set}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD?Variable not set}
+      POSTGRES_DB: ${POSTGRES_DB?Variable not set}
+      POSTGRES_SERVER: postgres
+      POSTGRES_PORT: ${POSTGRES_PORT?Variable not set}
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME?Variable not set}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD?Variable not set}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: ${RABBITMQ_PORT?Variable not set}
+      RABBITMQ_VHOST: ${RABBITMQ_VHOST?Variable not set}
+      API_HOST: ${API_HOST:-0.0.0.0}
+      API_PORT: ${API_PORT:-8000}
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    develop:
+      watch:
+        - action: sync
+          path: ./api_service/app
+          target: /app/app
+        - action: rebuild
+          path: ./api_service/pyproject.toml
+
+  tgbot_service:
+    build:
+      context: ./tgbot_service
+      dockerfile: Dockerfile
+    container_name: tgbot_service
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DEBUG: "1"
+      TG_BOT_TOKEN: ${TG_BOT_TOKEN?Variable not set}
+      TG_BOT_HOST: ${TG_BOT_HOST:-0.0.0.0}
+      TG_BOT_PORT: ${TG_BOT_PORT:-8080}
+      TG_BOT_DOMAIN: ${TG_BOT_DOMAIN:-}
+      TG_BOT_USE_REDIS: ${TG_BOT_USE_REDIS:-true}
+      API_DOMAIN: "http://api_service:${API_PORT:-8000}"
+      REDIS_HOST: redis
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_PORT: ${REDIS_PORT?-6379}
+      REDIS_PATH_TG_BOT: ${REDIS_PATH_TG_BOT?Variable not set}
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME?Variable not set}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD?Variable not set}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: ${RABBITMQ_PORT?Variable not set}
+      RABBITMQ_VHOST: ${RABBITMQ_VHOST?Variable not set}
+    ports:
+      - "8080:8080"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      api_service:
+        condition: service_started
+    develop:
+      watch:
+        - action: sync
+          path: ./tgbot_service/app
+          target: /app/app
+        - action: rebuild
+          path: ./tgbot_service/pyproject.toml
+
+  adminer:
+    image: adminer
+    container_name: adminer
+    restart: always
+    depends_on:
+      - postgres
+    environment:
+      - ADMINER_DESIGN=pepa-linha-dark
+    ports:
+      - "8070:8080"
+
+volumes:
+  postgres_data:
+  redis_data:
+  rabbitmq_data:
