@@ -49,6 +49,7 @@ filterwarnings = [
 source=["app"]
 dynamic_context = "test_function"
 concurrency = ["thread", "greenlet"]  # You can't trace a return statement in endpoints without it
+relative_files = true
 
 
 [tool.coverage.report]
