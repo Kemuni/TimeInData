@@ -16,7 +16,11 @@
     git clone https://github.com/Kemuni/TimeInData.git
     ```
 2. Copy `example.env` to `.env` and fill it with your data
-3. Run `docker compose up -d --build` or `docker compose watch` (for development).
+3. Run the following command to start services.
+   ```bash
+   docker compose up -d --build
+   ```
+   or `docker compose watch` for development.
 
 Now you can check next services:
 - Adminer: `http://localhost:8070` to manage databases
