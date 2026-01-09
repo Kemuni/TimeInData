@@ -40,7 +40,7 @@ async def update_notifications_settings(
         new_notify_hours = hours_data.notify_hours
     else:
         tz_delta = await db.users.get_tz_delta(user_id)
-        new_notify_hours = [(hour + tz_delta) % 24 for hour in hours_data.notify_hours]
+        new_notify_hours = [(local_hour - tz_delta) % 24 for local_hour in hours_data.notify_hours]
     await db.users.update_notify_hours(user_id, new_notify_hours)
     return SuccessResponse(
         data=schemas.UserNotificationsSettingsOut(notify_hours=new_notify_hours),
@@ -175,9 +175,10 @@ async def update_user_time_zone(
         db: DatabaseRepo = Depends(get_db)
 ) :
     """ Update user time zone delta in the database. User time = utc_hour + time_zone_delta (tz_delta). """
+    old_tz_delta = await db.users.get_tz_delta(user_id)
     await db.users.update_tz_delta(user_id, tz_delta)
     old_notify_hours = await db.users.get_notify_hours(user_id)
-    new_notify_hours = [(hour + tz_delta) % 24 for hour in old_notify_hours.notify_hours]
+    new_notify_hours = [(hour + tz_delta - old_tz_delta) % 24 for hour in old_notify_hours]
     await db.users.update_notify_hours(user_id, new_notify_hours)
     return SuccessResponse(
         data=schemas.MessageResponse(message="User time zone delta has been updated"),
