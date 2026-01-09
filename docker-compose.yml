@@ -1,10 +1,11 @@
 services:
   postgres:
-    image: postgres:17
+    build:
+      context: ./postgres_service
     container_name: postgres
     restart: unless-stopped
     env_file:
-      - .env
+      - .env.production
     environment:
       POSTGRES_USER: ${POSTGRES_USER?Variable not set}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD?Variable not set}
@@ -15,9 +16,8 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./init-db:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d \"${POSTGRES_DB}\""]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -27,7 +27,7 @@ services:
     container_name: redis
     restart: unless-stopped
     env_file:
-      - .env
+      - .env.production
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       REDIS_MAXMEMORY: 512mb
@@ -49,18 +49,17 @@ services:
       retries: 5
 
   rabbitmq:
-    image: rabbitmq:3.13-management-alpine
+    image: rabbitmq:3.13-alpine
     container_name: rabbitmq
     restart: unless-stopped
     env_file:
-      - .env
+      - .env.production
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME?Variable not set}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD?Variable not set}
       RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_VHOST?Variable not set}
     ports:
       - "5672:5672"
-      - "15672:15672"
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     healthcheck:
@@ -75,10 +74,13 @@ services:
       dockerfile: Dockerfile
     container_name: api_service
     restart: unless-stopped
+    networks:
+      - traefik-public
+      - default
     env_file:
-      - .env
+      - .env.production
     environment:
-      DEBUG: "1"
+      DEBUG: "0"
       POSTGRES_USER: ${POSTGRES_USER?Variable not set}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD?Variable not set}
       POSTGRES_DB: ${POSTGRES_DB?Variable not set}
@@ -91,8 +93,7 @@ services:
       RABBITMQ_VHOST: ${RABBITMQ_VHOST?Variable not set}
       API_HOST: ${API_HOST:-0.0.0.0}
       API_PORT: ${API_PORT:-8000}
-    ports:
-      - "8000:8000"
+      API_WORKERS: ${API_WORKERS:-2}
     depends_on:
       postgres:
         condition: service_healthy
@@ -100,13 +101,23 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-    develop:
-      watch:
-        - action: sync
-          path: ./api_service/app
-          target: /app/app
-        - action: rebuild
-          path: ./api_service/pyproject.toml
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik-public
+      - traefik.constraint-label=traefik-public
+
+      - traefik.http.services.time-in-data-project-backend.loadbalancer.server.port=8000
+
+      - traefik.http.routers.time-in-data-project-backend-http.rule=Host(`api.${DOMAIN?Variable not set}`)
+      - traefik.http.routers.time-in-data-project-backend-http.entrypoints=http
+
+      - traefik.http.routers.time-in-data-project-backend-https.rule=Host(`api.${DOMAIN?Variable not set}`)
+      - traefik.http.routers.time-in-data-project-backend-https.entrypoints=https
+      - traefik.http.routers.time-in-data-project-backend-https.tls=true
+      - traefik.http.routers.time-in-data-project-backend-https.tls.certresolver=le
+
+      # Enable redirection for HTTP and HTTPS
+      - traefik.http.routers.time-in-data-project-backend-http.middlewares=https-redirect
 
   tgbot_service:
     build:
@@ -114,10 +125,13 @@ services:
       dockerfile: Dockerfile
     container_name: tgbot_service
     restart: unless-stopped
+    networks:
+      - traefik-public
+      - default
     env_file:
-      - .env
+      - .env.production
     environment:
-      DEBUG: "1"
+      DEBUG: "0"
       TG_BOT_TOKEN: ${TG_BOT_TOKEN?Variable not set}
       TG_BOT_HOST: ${TG_BOT_HOST:-0.0.0.0}
       TG_BOT_PORT: ${TG_BOT_PORT:-8080}
@@ -133,8 +147,6 @@ services:
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: ${RABBITMQ_PORT?Variable not set}
       RABBITMQ_VHOST: ${RABBITMQ_VHOST?Variable not set}
-    ports:
-      - "8080:8080"
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -142,26 +154,55 @@ services:
         condition: service_healthy
       api_service:
         condition: service_started
-    develop:
-      watch:
-        - action: sync
-          path: ./tgbot_service/app
-          target: /app/app
-        - action: rebuild
-          path: ./tgbot_service/pyproject.toml
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik-public
+      - traefik.constraint-label=traefik-public
+
+      - traefik.http.services.time-in-data-project-tgbot.loadbalancer.server.port=8080
+
+      - traefik.http.routers.time-in-data-project-tgbot-http.rule=Host(`tgbot.${DOMAIN?Variable not set}`)
+      - traefik.http.routers.time-in-data-project-tgbot-http.entrypoints=http
+
+      - traefik.http.routers.time-in-data-project-tgbot-https.rule=Host(`tgbot.${DOMAIN?Variable not set}`)
+      - traefik.http.routers.time-in-data-project-tgbot-https.entrypoints=https
+      - traefik.http.routers.time-in-data-project-tgbot-https.tls=true
+      - traefik.http.routers.time-in-data-project-tgbot-https.tls.certresolver=le
+
+      # Enable redirection for HTTP and HTTPS
+      - traefik.http.routers.time-in-data-project-backend-http.middlewares=https-redirect
 
   adminer:
     image: adminer
     container_name: adminer
     restart: always
+    networks:
+      - traefik-public
+      - default
     depends_on:
       - postgres
     environment:
       - ADMINER_DESIGN=pepa-linha-dark
     ports:
       - "8070:8080"
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik-public
+      - traefik.constraint-label=traefik-public
+      - traefik.http.routers.time-in-data-project-adminer-http.rule=Host(`adminer.${DOMAIN?Variable not set}`)
+      - traefik.http.routers.time-in-data-project-adminer-http.entrypoints=http
+      - traefik.http.routers.time-in-data-project-adminer-http.middlewares=https-redirect
+      - traefik.http.routers.time-in-data-project-adminer-https.rule=Host(`adminer.${DOMAIN?Variable not set}`)
+      - traefik.http.routers.time-in-data-project-adminer-https.entrypoints=https
+      - traefik.http.routers.time-in-data-project-adminer-https.tls=true
+      - traefik.http.routers.time-in-data-project-adminer-https.tls.certresolver=le
+      - traefik.http.services.time-in-data-project-adminer.loadbalancer.server.port=8080
 
 volumes:
   postgres_data:
   redis_data:
   rabbitmq_data:
+
+networks:
+  traefik-public:
+    external: true

@@ -1,6 +1,6 @@
 services:
   traefik:
-    image: traefik:3.0
+    image: traefik:3.5
     ports:
       - 80:80  # for HTTP, necessary to redirect to HTTPS
       - 443:443  # for HTTPS
