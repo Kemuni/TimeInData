@@ -21,9 +21,9 @@ async def test_get_set_activities_reminder_pending_notifications(async_client: A
     assert response.json() == schemas.APIResponse(success=True, data=expected_result, error=None).model_dump()
 
     # Test non-empty result
-    user1 = get_random_user_model(notify_hours=[1, 2, 3])
-    user2 = get_random_user_model(notify_hours=[3, 4, 5])
-    user3 = get_random_user_model(notify_hours=[5, 6, 7])
+    user1 = get_random_user_model(notify_utc_hours=[1, 2, 3])
+    user2 = get_random_user_model(notify_utc_hours=[3, 4, 5])
+    user3 = get_random_user_model(notify_utc_hours=[5, 6, 7])
     db_session.add_all([user1, user2, user3])
     await db_session.commit()
 

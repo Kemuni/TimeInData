@@ -1,8 +1,8 @@
 """initial
 
-Revision ID: 7fd37837a113
+Revision ID: f04e188eb707
 Revises: 
-Create Date: 2026-01-04 05:11:19.477019
+Create Date: 2026-01-09 17:42:56.453392
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = '7fd37837a113'
+revision: str = 'f04e188eb707'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -25,21 +25,25 @@ def upgrade() -> None:
     sa.Column('username', sa.String(length=128), nullable=False),
     sa.Column('language', sa.String(length=10), nullable=False),
     sa.Column('joined_at', sa.TIMESTAMP(), server_default=sa.text("TIMEZONE('utc', CURRENT_TIMESTAMP)"), nullable=False),
-    sa.Column('last_activity', sa.TIMESTAMP(), server_default=sa.text("TIMEZONE('utc', CURRENT_TIMESTAMP)"), nullable=False),
-    sa.Column('notify_hours', postgresql.ARRAY(sa.SMALLINT()), server_default=sa.text("'{}'::smallint[]"), nullable=False),
+    sa.Column('last_interaction_at', sa.TIMESTAMP(), server_default=sa.text("TIMEZONE('utc', CURRENT_TIMESTAMP)"), nullable=False),
+    sa.Column('notify_utc_hours', postgresql.ARRAY(sa.SMALLINT()), server_default=sa.text("'{}'::smallint[]"), nullable=False),
     sa.Column('time_zone_delta', sa.SMALLINT(), nullable=False),
-    sa.CheckConstraint('array_length(notify_hours, 1) <= 24', name='check_notify_hours_max_length'),
-    sa.CheckConstraint('notify_hours <@ ARRAY[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]::smallint[]', name='check_notify_hours_range'),
+    sa.Column('created_at', sa.TIMESTAMP(), server_default=sa.text("TIMEZONE('utc', CURRENT_TIMESTAMP)"), nullable=False),
+    sa.Column('updated_at', sa.TIMESTAMP(), server_default=sa.text("TIMEZONE('utc', CURRENT_TIMESTAMP)"), nullable=False),
+    sa.CheckConstraint('array_length(notify_utc_hours, 1) <= 24', name='check_notify_utc_hours_max_length'),
+    sa.CheckConstraint('notify_utc_hours <@ ARRAY[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]::smallint[]', name='check_notify_utc_hours_range'),
     sa.CheckConstraint('time_zone_delta BETWEEN -12 AND 12', name='check_timezone_range'),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_index('ix_users_notify_hours', 'users', ['notify_hours'], unique=False, postgresql_using='gin')
+    op.create_index('ix_users_notify_utc_hours', 'users', ['notify_utc_hours'], unique=False, postgresql_using='gin')
     op.create_table('activities',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.BIGINT(), nullable=False),
     sa.Column('type', sa.String(length=20), nullable=False),
     sa.Column('utc_date', sa.DATE(), nullable=False),
     sa.Column('utc_hour', sa.SMALLINT(), nullable=False),
+    sa.Column('created_at', sa.TIMESTAMP(), server_default=sa.text("TIMEZONE('utc', CURRENT_TIMESTAMP)"), nullable=False),
+    sa.Column('updated_at', sa.TIMESTAMP(), server_default=sa.text("TIMEZONE('utc', CURRENT_TIMESTAMP)"), nullable=False),
     sa.CheckConstraint('utc_hour BETWEEN 0 AND 23', name='check_hour_range'),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id'),
@@ -55,6 +59,6 @@ def downgrade() -> None:
     op.drop_index('ix_activity_user_date', table_name='activities')
     op.drop_index('ix_activity_date_hour', table_name='activities')
     op.drop_table('activities')
-    op.drop_index('ix_users_notify_hours', table_name='users', postgresql_using='gin')
+    op.drop_index('ix_users_notify_utc_hours', table_name='users', postgresql_using='gin')
     op.drop_table('users')
     # ### end Alembic commands ###

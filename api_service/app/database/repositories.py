@@ -36,7 +36,7 @@ class UserRepo(BaseRepo):
         """
         get_stmt = (
             select(User.id)
-            .where(User.notify_hours.contains([hour]))
+            .where(User.notify_utc_hours.contains([hour]))
         )
         result = await self.session.execute(get_stmt)
         return result.scalars().all()
@@ -79,29 +79,29 @@ class UserRepo(BaseRepo):
 
         return user, is_created
 
-    async def update_notify_hours(self, user_id: int, new_hours: List[int]) -> None:
+    async def update_notify_utc_hours(self, user_id: int, new_hours: List[int]) -> None:
         """
         Update user notifies hours in the database.
         :param user_id: The user's telegram ID.
-        :param new_hours: The new user's hours to notify.
+        :param new_hours: The new user's utc hours to notify.
         """
         update_stmt = (
             update(User)
             .where(User.id == user_id)
-            .values(notify_hours=new_hours)
+            .values(notify_utc_hours=new_hours)
         )
 
         await self.session.execute(update_stmt)
         await self.session.commit()
 
-    async def get_notify_hours(self, user_id: int) -> Optional[List[int]]:
+    async def get_notify_utc_hours(self, user_id: int) -> Optional[List[int]]:
         """
-        Get user notifies hours from the database.
+        Get user notifies UTC hours from the database.
         :param user_id: The user's telegram ID.
         :return: List with user notify hours or None.
         """
         select_stmt = (
-            select(User.notify_hours)
+            select(User.notify_utc_hours)
             .where(User.id == user_id)
         )
 

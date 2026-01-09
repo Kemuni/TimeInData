@@ -12,9 +12,9 @@ from tests.utils.utils import get_random_lower_string
 
 
 async def test_get_ids_to_notify(db_session: AsyncSession) -> None:
-    user1 = get_random_user_model(notify_hours=[1, 2, 3])
-    user2 = get_random_user_model(notify_hours=[3, 4, 5])
-    user3 = get_random_user_model(notify_hours=[5, 6, 7])
+    user1 = get_random_user_model(notify_utc_hours=[1, 2, 3])
+    user2 = get_random_user_model(notify_utc_hours=[3, 4, 5])
+    user3 = get_random_user_model(notify_utc_hours=[5, 6, 7])
 
     db_session.add_all([user1, user2, user3])
     await db_session.commit()
@@ -28,8 +28,8 @@ async def test_get_ids_to_notify(db_session: AsyncSession) -> None:
 
 async def test_get_ids_to_notify_empty(db_session: AsyncSession) -> None:
     db_session.add_all([
-        get_random_user_model(notify_hours=[1, 2, 3]),
-        get_random_user_model(notify_hours=[3, 4, 5])
+        get_random_user_model(notify_utc_hours=[1, 2, 3]),
+        get_random_user_model(notify_utc_hours=[3, 4, 5])
     ])
     await db_session.commit()
 
@@ -46,7 +46,7 @@ async def test_user_create_or_update(db_session: AsyncSession) -> None:
         _id=get_random_telegram_id(),
         language="en",
         username=get_random_lower_string(),
-        notify_hours=[],
+        notify_utc_hours=[],
         time_zone_delta=0,
     )
 
@@ -59,8 +59,8 @@ async def test_user_create_or_update(db_session: AsyncSession) -> None:
     assert user.id == user_schema.id
     assert user.language == user_schema.language
     assert user.username == user_schema.username
-    assert isinstance(user.notify_hours, list)
-    assert len(user.notify_hours) == 0
+    assert isinstance(user.notify_utc_hours, list)
+    assert len(user.notify_utc_hours) == 0
     assert user.time_zone_delta == 0
     assert utc_now - timedelta(seconds=2) <= user.joined_at <= utc_now + timedelta(seconds=2)
     assert user.joined_at == user.last_interaction_at
@@ -77,38 +77,38 @@ async def test_user_create_or_update(db_session: AsyncSession) -> None:
     assert user.id == user_schema.id
     assert user.language == user_schema.language
     assert user.username == user_schema.username
-    assert isinstance(user.notify_hours, list)
-    assert len(user.notify_hours) == 0
+    assert isinstance(user.notify_utc_hours, list)
+    assert len(user.notify_utc_hours) == 0
     assert user.time_zone_delta == 0
     assert user.joined_at != user.last_interaction_at
     assert utc_now - timedelta(seconds=2) <= user.last_interaction_at <= utc_now + timedelta(seconds=2)
 
 
 async def test_update_notify_hours(db_session: AsyncSession) -> None:
-    user = get_random_user_model(notify_hours=[1, 2, 3])
+    user = get_random_user_model(notify_utc_hours=[1, 2, 3])
 
     db_session.add(user)
     await db_session.commit()
 
     new_hours = [4, 5, 6]
-    await UserRepo(session=db_session).update_notify_hours(user.id, new_hours)
+    await UserRepo(session=db_session).update_notify_utc_hours(user.id, new_hours)
 
     db_user = await get_user_from_db(db_session, user.id)
 
-    assert db_user.notify_hours == new_hours
+    assert db_user.notify_utc_hours == new_hours
 
 
 async def test_get_notify_hours(db_session: AsyncSession) -> None:
-    user1 = get_random_user_model(notify_hours=[1, 4, 3])
-    user2 = get_random_user_model(notify_hours=[])
+    user1 = get_random_user_model(notify_utc_hours=[1, 4, 3])
+    user2 = get_random_user_model(notify_utc_hours=[])
 
     db_session.add_all([user1, user2])
     await db_session.commit()
 
-    notify_hours = await UserRepo(session=db_session).get_notify_hours(user1.id)
-    assert notify_hours == user1.notify_hours
+    notify_hours = await UserRepo(session=db_session).get_notify_utc_hours(user1.id)
+    assert notify_hours == user1.notify_utc_hours
 
-    notify_hours = await UserRepo(session=db_session).get_notify_hours(user2.id)
+    notify_hours = await UserRepo(session=db_session).get_notify_utc_hours(user2.id)
     assert notify_hours is None or notify_hours == []
 
 

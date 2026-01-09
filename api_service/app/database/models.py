@@ -36,7 +36,7 @@ class User(Base):
     language: Mapped[str] = mapped_column(String(10))
     joined_at: Mapped[datetime] = mapped_column(TIMESTAMP, server_default=db_utcnow())
     last_interaction_at: Mapped[datetime] = mapped_column(TIMESTAMP, server_default=db_utcnow())
-    notify_hours: Mapped[List[int]] = mapped_column(
+    notify_utc_hours: Mapped[List[int]] = mapped_column(
         ARRAY(SMALLINT),
         nullable=False,
         default=list,
@@ -52,14 +52,14 @@ class User(Base):
             name='check_timezone_range'
         ),
         CheckConstraint(
-            "array_length(notify_hours, 1) <= 24",
-            name='check_notify_hours_max_length'
+            "array_length(notify_utc_hours, 1) <= 24",
+            name='check_notify_utc_hours_max_length'
         ),
         CheckConstraint(
-            "notify_hours <@ ARRAY[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]::smallint[]",
-            name='check_notify_hours_range'
+            "notify_utc_hours <@ ARRAY[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]::smallint[]",
+            name='check_notify_utc_hours_range'
         ),
-        Index('ix_users_notify_hours', notify_hours, postgresql_using='gin'),
+        Index('ix_users_notify_utc_hours', notify_utc_hours, postgresql_using='gin'),
     )
 
     def __repr__(self) -> str:

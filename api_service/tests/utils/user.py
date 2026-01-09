@@ -19,14 +19,14 @@ def get_random_user_model(
         language: Optional[str] = None,
         joined_at: Optional[datetime] = None,
         last_interaction_at: Optional[datetime] = None,
-        notify_hours: Optional[List[int]] = None,
+        notify_utc_hours: Optional[List[int]] = None,
         time_zone_delta: Optional[int] = None,
 ):
     """ Create a random model of `User`. NO OBJECT CREATION IN DATABASE. """
     joined_at = joined_at or get_random_datetime()
     last_interaction_at = last_interaction_at or get_random_datetime(from_date=joined_at)
-    if notify_hours is None:
-        notify_hours = list(range(get_random_number(min_num=0, max_num=24)))
+    if notify_utc_hours is None:
+        notify_utc_hours = list(range(get_random_number(min_num=0, max_num=24)))
 
     return User(
         id=_id or get_random_telegram_id(),
@@ -34,7 +34,7 @@ def get_random_user_model(
         language=language or "en",
         joined_at=joined_at,
         last_interaction_at=last_interaction_at,
-        notify_hours=notify_hours,
+        notify_utc_hours=notify_utc_hours,
         time_zone_delta=time_zone_delta or get_random_number(min_num=-6, max_num=6)
     )
 

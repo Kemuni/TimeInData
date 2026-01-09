@@ -40,7 +40,8 @@ class UserBase(BaseModel):
 
 
 class UserNotificationsSettingsOut(BaseModel):
-    notify_hours: List[HourNumber]
+    notify_utc_hours: List[HourNumber]
+    notify_local_hours: List[HourNumber]
 
 
 class UserNotificationsSettingsIn(BaseModel):
@@ -62,7 +63,7 @@ class UserTimeZoneDeltaOut(BaseModel):
 
 class UserOut(UserBase):
     id: int
-    notify_hours: List[HourNumber]
+    notify_utc_hours: List[HourNumber]
     time_zone_delta: TzDeltaNumber = Field(..., serialization_alias="tz_delta")
     last_interaction_at: datetime
     created_at: datetime
