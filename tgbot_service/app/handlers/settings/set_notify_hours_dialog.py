@@ -65,13 +65,12 @@ async def save_notify_hours(callback: types.CallbackQuery, _, manager: DialogMan
 
 
 async def on_start(_, manager: DialogManager):
-    """ Set last saved user data for dialog from database """
+    """ Set last saved user data for dialog from the database """
     multi = manager.find(HOURS_SELECTED_BTN_ID)
     api: APIParser = manager.middleware_data['api']
     user_notify_hours = await api.get_user_notify_hours(manager.event.from_user.id)
-    if user_notify_hours:
-        for hour in user_notify_hours:
-            await multi.set_checked(hour, True)
+    for hour in user_notify_hours.local_hours:
+        await multi.set_checked(hour, True)
 
 
 dialog = Dialog(

@@ -1,5 +1,5 @@
 import enum
-from datetime import date
+from datetime import date, datetime
 from typing import List, TypeVar, Any, Generic, Optional
 
 from pydantic.dataclasses import dataclass
@@ -53,13 +53,17 @@ class UserOut:
     id: int
     username: str
     language: str
-    notify_hours: List[int]
+    notify_utc_hours: List[int]
     tz_delta: int
+    created_at: datetime
+    last_interaction_at: datetime
+    updated_at: datetime
 
 
 @dataclass(slots=True)
 class UserNotificationsSettingsOut:
-    notify_hours: List[int]
+    notify_utc_hours: List[int]
+    notify_local_hours: List[int]
 
 
 @dataclass(slots=True)
@@ -81,3 +85,8 @@ class APIResponse(Generic[ApiData]):
     data: Optional[ApiData]
     error: Optional[APIErrorDetail]
 
+
+@dataclass(slots=True, frozen=True)
+class UserNotifyHours:
+    utc_hours: List[int]
+    local_hours: List[int]

@@ -11,7 +11,7 @@ from app.api_parser.types import (
     ActivityBaseIn,
     ActivitiesSummaryOut,
     UserNotificationsSettingsOut,
-    UserTimeZoneDeltaOut
+    UserTimeZoneDeltaOut, UserNotifyHours
 )
 from app.config import get_config
 from app.exceptions import APIError
@@ -92,7 +92,7 @@ class APIParser:
         response = await self.client.put(self.PUT_USER_URI, json=user_data)
         user = self._parse_response(response, UserOut)
 
-        return response.status_code == 201 or len(user.notify_hours) == 0
+        return response.status_code == 201 or len(user.notify_utc_hours) == 0
 
     async def update_user_notify_hours(self, user_id: int, notify_hours: List[int]) -> None:
         """
@@ -120,7 +120,7 @@ class APIParser:
         response = await self.client.put(self.PUT_USER_TIMEZONE_SETTINGS_URI.format(user_id=user_id), json=user_data)
         response.raise_for_status()
 
-    async def get_user_notify_hours(self, user_id: int) -> List[int]:
+    async def get_user_notify_hours(self, user_id: int) -> UserNotifyHours:
         """
         Get user hours for notifications.
 
@@ -129,11 +129,14 @@ class APIParser:
         """
         response = await self.client.get(self.GET_USER_NOTIFICATIONS_SETTINGS_URI.format(user_id=user_id))
         notifications_settings = self._parse_response(response, UserNotificationsSettingsOut)
-        return notifications_settings.notify_hours
+        return UserNotifyHours(
+            utc_hours=notifications_settings.notify_utc_hours,
+            local_hours=notifications_settings.notify_local_hours,
+        )
 
     async def get_user_time_zone_delta(self, user_id: int) -> int:
         """
-        Get hour's delta of user time zone. For example, if user from Moscow, means UTC+3, method will return 3.
+        Get hour's delta of user time zone. For example, if a user from Moscow (means UTC+3) method will return 3.
 
         :param user_id: Telegram ID of user.
         :return: Hours delta of time zone.
