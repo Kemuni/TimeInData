@@ -61,6 +61,11 @@ jobs:
           uv run coverage report
           uv run coverage xml
 
+      - name: Debug job
+        if: always()
+        run: |
+          coverage json -o -
+
 #      - name: Upload coverage to Codecov
 #        if: always()
 #        uses: codecov/codecov-action@v5
@@ -77,4 +82,3 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           MINIMUM_GREEN: 80
           MINIMUM_ORANGE: 60
-          COVERAGE_PATH: .
