@@ -1,18 +1,48 @@
-FROM python:3.10
+FROM python:3.12-slim
 
-ENV PYTHONUNBUFFERED=1
+WORKDIR /app
 
-COPY ./api_service/requirements.txt .
-RUN python -m pip install --upgrade pip && pip install -r requirements.txt
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
-ENV PYTHONPATH=/app
+# Install uv
+# Ref: https://docs.astral.sh/uv/guides/integration/docker/#installing-uv
+COPY --from=ghcr.io/astral-sh/uv:0.5.11 /uv /uvx /bin/
 
-WORKDIR /app/
-COPY ./api_service /app/api
-COPY ./logger /app/logger
+# Place executables in the environment at the front of the path
+# Ref: https://docs.astral.sh/uv/guides/integration/docker/#using-the-environment
+ENV PATH="/app/.venv/bin:$PATH"
 
-# Создаем директорию для логов
-RUN mkdir -p /logs && chmod 777 /logs
+# Compile bytecode
+# Ref: https://docs.astral.sh/uv/guides/integration/docker/#compiling-bytecode
+ENV UV_COMPILE_BYTECODE=1
 
-# Возвращаемся в /app и запускаем приложение
-CMD ["python", "api/app.py"]
+# uv Cache
+# Ref: https://docs.astral.sh/uv/guides/integration/docker/#caching
+ENV UV_LINK_MODE=copy
+
+# Install dependencies
+# Ref: https://docs.astral.sh/uv/guides/integration/docker/#intermediate-layers
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --frozen --no-install-project
+
+# Copy dependency files
+COPY pyproject.toml uv.lock ./
+
+# Sync the project
+# Ref: https://docs.astral.sh/uv/guides/integration/docker/#intermediate-layers
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync
+
+# Copy application code
+COPY . .
+
+# Expose port
+EXPOSE 8000
+
+# Run migrations and start the application
+CMD ["sh", "-c", "uv run alembic upgrade head && uv run -m app.main"]

@@ -1,0 +1,93 @@
+name: API Service Tests
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'api_service/**'
+      - '.github/workflows/api-tests.yml'
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'api_service/**'
+      - '.github/workflows/api-tests.yml'
+
+jobs:
+  test:
+    name: Run tests with coverage
+    runs-on: ubuntu-latest
+    permissions:
+      # Gives the action the necessary permissions for creating checks
+      checks: write
+      # Gives the action the necessary permissions for publishing new
+      # comments in pull requests.
+      pull-requests: write
+      # Gives the action the necessary permissions for pushing data to the
+      # python-coverage-comment-action branch, and for editing existing
+      # comments (to avoid publishing multiple comments in the same PR)
+      contents: write
+    defaults:
+      run:
+        working-directory: ./api_service
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "0.5.11"
+          enable-cache: true
+
+      - name: Install dependencies
+        run: |
+          uv sync --all-groups
+
+      - name: Run tests with coverage
+        run: |
+          uv run coverage run -m pytest tests/ --junitxml=test-results.xml
+
+      - name: Generate coverage report
+        if: always()
+        run: |
+          uv run coverage report
+          uv run coverage xml
+
+      - name: Upload coverage artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: |
+            api_service/.coverage
+            api_service/coverage.xml
+            api_service/htmlcov/
+          include-hidden-files: true  # Required for .coverage
+
+      - name: Publish test results
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Test Results
+          path: test-results.xml
+          reporter: java-junit
+          working-directory: ./api_service
+
+      - name: Coverage comment
+        if: github.event_name == 'pull_request'
+        uses: py-cov-action/python-coverage-comment-action@v3
+        with:
+          GITHUB_TOKEN: ${{ github.token }}
+          MINIMUM_GREEN: 80
+          MINIMUM_ORANGE: 60
+          COVERAGE_PATH: './api_service'
