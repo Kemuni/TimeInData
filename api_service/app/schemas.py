@@ -64,6 +64,9 @@ class UserOut(UserBase):
     id: int
     notify_hours: List[HourNumber]
     time_zone_delta: TzDeltaNumber = Field(..., serialization_alias="tz_delta")
+    last_interaction_at: datetime
+    created_at: datetime
+    updated_at: datetime
 
 
 class UserActivitySummary(BaseModel):

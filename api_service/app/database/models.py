@@ -4,6 +4,7 @@ from typing import List
 
 from sqlalchemy import ForeignKey, String, TIMESTAMP, BIGINT, SMALLINT, UniqueConstraint, DATE
 from sqlalchemy.dialects.postgresql import ARRAY
+from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.orm import DeclarativeBase, relationship
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
@@ -13,8 +14,18 @@ from sqlalchemy.sql.schema import CheckConstraint, Index
 from app.database.func import db_utcnow
 
 
-class Base(DeclarativeBase):
-    pass
+class Base(AsyncAttrs, DeclarativeBase):
+    __abstract__ = True
+
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP,
+        server_default=db_utcnow()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP,
+        server_default=db_utcnow(),
+        onupdate=db_utcnow()
+    )
 
 
 class User(Base):
@@ -24,7 +35,7 @@ class User(Base):
     username: Mapped[str] = mapped_column(String(128))
     language: Mapped[str] = mapped_column(String(10))
     joined_at: Mapped[datetime] = mapped_column(TIMESTAMP, server_default=db_utcnow())
-    last_activity: Mapped[datetime] = mapped_column(TIMESTAMP, server_default=db_utcnow())
+    last_interaction_at: Mapped[datetime] = mapped_column(TIMESTAMP, server_default=db_utcnow())
     notify_hours: Mapped[List[int]] = mapped_column(
         ARRAY(SMALLINT),
         nullable=False,
