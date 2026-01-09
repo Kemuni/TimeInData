@@ -72,14 +72,13 @@ jobs:
             api_service/htmlcov/
           include-hidden-files: true  # Required for .coverage
 
-#      - name: Upload coverage to Codecov
-#        if: always()
-#        uses: codecov/codecov-action@v5
-#        with:
-#          file: ./coverage.xml
-#          flags: api-service
-#          name: api-service-coverage
-#          fail_ci_if_error: false
+      - name: Publish test results
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Test Results
+          path: test-results.xml
+          reporter: java-junit
 
       - name: Coverage comment
         if: github.event_name == 'pull_request'
