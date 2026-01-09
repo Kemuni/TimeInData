@@ -65,7 +65,7 @@ jobs:
         if: always()
         uses: codecov/codecov-action@v5
         with:
-          file: ./api_service/coverage.xml
+          file: ./coverage.xml
           flags: api-service
           name: api-service-coverage
           fail_ci_if_error: false
