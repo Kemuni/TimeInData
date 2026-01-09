@@ -49,7 +49,7 @@ class UserRepo(BaseRepo):
         :param username: The user's username. It's an optional parameter.
         :return: The User model and bool is_created, True if it is a new user, otherwise False.
         """
-        is_created_column = (User.joined_at == User.last_activity).label("is_created")
+        is_created_column = (User.joined_at == User.last_interaction_at).label("is_created")
         insert_stmt = (
             insert(User)
             .values(
@@ -62,7 +62,7 @@ class UserRepo(BaseRepo):
                 set_=dict(
                     username=username,
                     language=language,
-                    last_activity=db_utcnow(),
+                    last_interaction_at=db_utcnow(),
                 ),
             )
             .returning(
