@@ -63,7 +63,7 @@ async def test_user_create_or_update(db_session: AsyncSession) -> None:
     assert len(user.notify_hours) == 0
     assert user.time_zone_delta == 0
     assert utc_now - timedelta(seconds=2) <= user.joined_at <= utc_now + timedelta(seconds=2)
-    assert user.joined_at == user.last_activity
+    assert user.joined_at == user.last_interaction_at
 
     # Test update
     user_schema.username = get_random_lower_string()
@@ -80,8 +80,8 @@ async def test_user_create_or_update(db_session: AsyncSession) -> None:
     assert isinstance(user.notify_hours, list)
     assert len(user.notify_hours) == 0
     assert user.time_zone_delta == 0
-    assert user.joined_at != user.last_activity
-    assert utc_now - timedelta(seconds=2) <= user.last_activity <= utc_now + timedelta(seconds=2)
+    assert user.joined_at != user.last_interaction_at
+    assert utc_now - timedelta(seconds=2) <= user.last_interaction_at <= utc_now + timedelta(seconds=2)
 
 
 async def test_update_notify_hours(db_session: AsyncSession) -> None:

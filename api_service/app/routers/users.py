@@ -32,12 +32,18 @@ async def create_or_update(user: schemas.UserBase, db: DatabaseRepo = Depends(ge
 async def update_notifications_settings(
         user_id: schemas.TelegramUserId,
         hours_data: schemas.UserNotificationsSettingsIn,
+        is_in_utc: bool = False,
         db: DatabaseRepo = Depends(get_db)
 ):
     """  Update user hours to notify in the database. """
-    await db.users.update_notify_hours(user_id, hours_data.notify_hours)
+    if is_in_utc:
+        new_notify_hours = hours_data.notify_hours
+    else:
+        tz_delta = await db.users.get_tz_delta(user_id)
+        new_notify_hours = [(hour + tz_delta) % 24 for hour in hours_data.notify_hours]
+    await db.users.update_notify_hours(user_id, new_notify_hours)
     return SuccessResponse(
-        data=schemas.UserNotificationsSettingsOut(notify_hours=hours_data.notify_hours),
+        data=schemas.UserNotificationsSettingsOut(notify_hours=new_notify_hours),
         status_code=status.HTTP_200_OK
     )
 
@@ -170,6 +176,9 @@ async def update_user_time_zone(
 ) :
     """ Update user time zone delta in the database. User time = utc_hour + time_zone_delta (tz_delta). """
     await db.users.update_tz_delta(user_id, tz_delta)
+    old_notify_hours = await db.users.get_notify_hours(user_id)
+    new_notify_hours = [(hour + tz_delta) % 24 for hour in old_notify_hours.notify_hours]
+    await db.users.update_notify_hours(user_id, new_notify_hours)
     return SuccessResponse(
         data=schemas.MessageResponse(message="User time zone delta has been updated"),
         status_code=status.HTTP_200_OK

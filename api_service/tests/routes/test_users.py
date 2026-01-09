@@ -30,7 +30,7 @@ async def test_create_or_update(async_client: AsyncClient, db_session: AsyncSess
     assert db_user.username == user_base.username
     assert db_user.language == user_base.language
     assert utcnow - timedelta(seconds=2) <= db_user.joined_at <= utcnow + timedelta(seconds=2)
-    assert db_user.last_activity == db_user.joined_at
+    assert db_user.last_interaction_at == db_user.joined_at
 
     # Test updating
     user_base.language = 'ar'
@@ -46,26 +46,43 @@ async def test_create_or_update(async_client: AsyncClient, db_session: AsyncSess
     assert new_result['data']['language'] == user_base.language
 
     db_user = await get_user_from_db(db_session, user_base.id)
-    assert db_user.last_activity > db_user.joined_at
+    assert db_user.last_interaction_at > db_user.joined_at
     assert db_user.username == user_base.username
     assert db_user.language == user_base.language
 
 
 async def test_update_notifications_settings(async_client: AsyncClient, db_session: AsyncSession) -> None:
-    user = get_random_user_model(notify_hours=[1, 2, 3])
+    # Test notify hours with time zone delta
+    user = get_random_user_model(notify_hours=[1, 2, 3], time_zone_delta=-3)
     db_session.add(user)
     await db_session.commit()
 
-    response = await async_client.put(f'/users/{user.id}/settings/notifications', json={'notify_hours': [4, 5, 6]})
+    response = await async_client.put(f'/users/{user.id}/settings/notifications', json={'notify_hours': [2, 3, 4]})
     assert response.status_code == status.HTTP_200_OK
     expected_result = schemas.APIResponse(
-        success=True, data=schemas.UserNotificationsSettingsOut(notify_hours=user.notify_hours), error=None
+        success=True, data=schemas.UserNotificationsSettingsOut(notify_hours=[23, 0, 1]), error=None
     )
     assert response.json() == expected_result.model_dump()
 
     db_user = await get_user_from_db(db_session, user.id)
-    assert db_user.notify_hours == [4, 5, 6]
+    assert db_user.notify_hours == [23, 0, 1]
 
+    # Test with `in UTC` arg
+    response = await async_client.put(
+        f'/users/{user.id}/settings/notifications',
+        params={'is_in_utc': True},
+        json={'notify_hours': [4, 5]},
+    )
+    assert response.status_code == status.HTTP_200_OK
+    expected_result = schemas.APIResponse(
+        success=True, data=schemas.UserNotificationsSettingsOut(notify_hours=[4, 5]), error=None
+    )
+    assert response.json() == expected_result.model_dump()
+
+    db_user = await get_user_from_db(db_session, user.id)
+    assert db_user.notify_hours == [4, 5]
+
+    # Test empty notify hours
     response = await async_client.put(f'/users/{user.id}/settings/notifications', json={'notify_hours': []})
     assert response.status_code == status.HTTP_200_OK
 
