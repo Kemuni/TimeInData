@@ -79,6 +79,7 @@ jobs:
           name: Test Results
           path: test-results.xml
           reporter: java-junit
+          working-directory: ./api_service
 
       - name: Coverage comment
         if: github.event_name == 'pull_request'
@@ -87,3 +88,4 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           MINIMUM_GREEN: 80
           MINIMUM_ORANGE: 60
+          COVERAGE_PATH: './api_service'
