@@ -26,7 +26,7 @@ def get_random_activity_model(
         user_id=user_id,
         type=_type or get_random_activity_type(),
         utc_date=utc_date or get_random_datetime().date(),
-        utc_hour=utc_hour or get_random_number(0, 23),
+        utc_hour=utc_hour if utc_hour is not None else get_random_number(0, 23),
     )
 
 
