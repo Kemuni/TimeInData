@@ -61,14 +61,14 @@ jobs:
           uv run coverage report
           uv run coverage xml
 
-      - name: Upload coverage to Codecov
-        if: always()
-        uses: codecov/codecov-action@v5
-        with:
-          file: ./coverage.xml
-          flags: api-service
-          name: api-service-coverage
-          fail_ci_if_error: false
+#      - name: Upload coverage to Codecov
+#        if: always()
+#        uses: codecov/codecov-action@v5
+#        with:
+#          file: ./coverage.xml
+#          flags: api-service
+#          name: api-service-coverage
+#          fail_ci_if_error: false
 
       - name: Coverage comment
         if: github.event_name == 'pull_request'
@@ -77,4 +77,4 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           MINIMUM_GREEN: 80
           MINIMUM_ORANGE: 60
-          COVERAGE_PATH: ./.coverage
+          COVERAGE_PATH: ./api_service/.coverage
