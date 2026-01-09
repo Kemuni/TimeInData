@@ -77,4 +77,4 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           MINIMUM_GREEN: 80
           MINIMUM_ORANGE: 60
-          COVERAGE_PATH: api_service
+          COVERAGE_PATH: .
