@@ -1,17 +1,20 @@
+import logging
+
 from faststream import FastStream
 from faststream.rabbit import RabbitBroker
 from loguru import logger
 
-from config import get_config
+from app.config import get_config
 
 
-broker = RabbitBroker(url=get_config().rabbitmq.url)
+broker = RabbitBroker(url=get_config().rabbitmq.url, logger=logging.getLogger(__name__))
 faststream_app = FastStream(broker)
 
 
 async def rabbitmq_startup():
+    from app.msg_queue.handlers import router
+
     logger.info('RabbitMQ broker startup...')
-    from msg_queue.handlers import router
     broker.include_router(router)
     logger.info('RabbitMQ router included!')
 

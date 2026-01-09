@@ -1,9 +1,9 @@
 from faststream.rabbit import RabbitRouter
 from loguru import logger
 
-from config import get_config
-from msg_queue.types import ReminderRabbitMessage, ReminderMessageType
-from msg_queue.tasks.notify_users import send_bunch_messages
+from app.config import get_config
+from app.msg_queue.types import ReminderRabbitMessage, ReminderMessageType
+from app.msg_queue.tasks.notify_users import send_bunch_messages
 
 router = RabbitRouter()
 

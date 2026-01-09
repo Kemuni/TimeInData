@@ -14,12 +14,12 @@ from aiohttp import web
 from loguru import logger
 from tenacity import RetryError
 
-from config import get_config
-from handlers import routers_list
-from logger import configure_logger
-from middlewares.api_connection_middleware import APIConnectionMiddleware
-from pre_start_tasks import check_api_service_connection
-from msg_queue.broker import rabbitmq_startup, rabbitmq_shutdown
+from app.config import get_config
+from app.handlers import routers_list
+from app.logger import configure_logger
+from app.middlewares.api_connection_middleware import APIConnectionMiddleware
+from app.pre_start_tasks import check_api_service_connection
+from app.msg_queue.broker import rabbitmq_startup, rabbitmq_shutdown
 
 
 async def pre_start_tasks() -> None:

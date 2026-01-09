@@ -7,9 +7,9 @@ from aiogram_dialog import DialogManager, Dialog, Window, StartMode
 from aiogram_dialog.widgets.kbd import Start, Column, Back, Cancel
 from aiogram_dialog.widgets.text import Const, Format
 
-from states.set_activity import SetActivityDialogSG
-from states.settings import SetNotifyHoursSG, SettingsDialogSG
-from states.start import StartDialogSG
+from app.states.set_activity import SetActivityDialogSG
+from app.states.settings import SetNotifyHoursSG, SettingsDialogSG
+from app.states.start import StartDialogSG
 
 TO_BOT_DESCRIPTION_BTN_ID = 'to_bot_description_btn_id'
 TO_USER_SETTINGS_BTN_ID = 'to_user_settings_btn_id'

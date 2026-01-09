@@ -4,7 +4,7 @@ from typing import Optional
 from urllib.parse import quote
 
 from loguru import logger
-from pydantic import SecretStr, RedisDsn
+from pydantic import SecretStr, RedisDsn, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 

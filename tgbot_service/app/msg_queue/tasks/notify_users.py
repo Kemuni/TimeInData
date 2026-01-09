@@ -6,7 +6,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiohttp import web
 from loguru import logger
 
-from config import get_config
+from app.config import get_config
 
 routes = web.RouteTableDef()
 

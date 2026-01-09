@@ -6,8 +6,8 @@ from aiogram_dialog.widgets.kbd import Row, Cancel, Button, Counter, ManagedCoun
 from aiogram_dialog.widgets.text import Const, Format
 from loguru import logger
 
-from api_parser import APIParser
-from states.settings import SetTimeZoneSG
+from app.api_parser import APIParser
+from app.states.settings import SetTimeZoneSG
 
 COUNTER_BTN_ID = "counter_btn_id"
 SAVE_NEW_TZ_BTN_ID = "save_new_tz_btn_id"

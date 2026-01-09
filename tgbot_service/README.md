@@ -27,5 +27,5 @@ Then activate virtual environment:
 ---
 - **Develop** mode (with `export DEBUG=1`)
     ```bash
-    uv run -m main.py
+    uv run -m app.main
     ```

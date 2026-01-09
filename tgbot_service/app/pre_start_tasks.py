@@ -4,7 +4,7 @@ from typing import Optional
 
 from tenacity import after_log, before_log, retry, stop_after_attempt, wait_fixed
 
-from api_parser import APIParser
+from app.api_parser import APIParser
 
 
 logger = logging.getLogger(__name__)

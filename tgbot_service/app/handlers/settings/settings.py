@@ -4,7 +4,7 @@ from aiogram_dialog import DialogManager, Dialog, Window, StartMode
 from aiogram_dialog.widgets.kbd import Row, Cancel, Start, Column
 from aiogram_dialog.widgets.text import Const
 
-from states.settings import SettingsDialogSG, SetNotifyHoursSG, SetTimeZoneSG
+from app.states.settings import SettingsDialogSG, SetNotifyHoursSG, SetTimeZoneSG
 from . import set_notify_hours_dialog, set_time_zone_dialog
 
 SET_NOTIFY_HOURS_DIALOG_BTN_ID: str = "set_notify_hours_dialog_btn"

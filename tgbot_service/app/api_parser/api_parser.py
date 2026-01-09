@@ -4,7 +4,7 @@ from typing import AsyncIterator, List, Optional, TypeVar, Type
 import httpx
 from pydantic import TypeAdapter, ValidationError
 
-from api_parser.types import (
+from app.api_parser.types import (
     APIResponse,
     UserOut,
     Activity,
@@ -13,8 +13,8 @@ from api_parser.types import (
     UserNotificationsSettingsOut,
     UserTimeZoneDeltaOut
 )
-from config import get_config
-from exceptions import APIError
+from app.config import get_config
+from app.exceptions import APIError
 
 
 T = TypeVar('T')

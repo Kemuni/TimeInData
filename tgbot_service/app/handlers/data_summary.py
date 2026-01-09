@@ -4,8 +4,8 @@ from aiogram import Router, types, Bot
 from aiogram.filters import Command
 from aiogram.utils.chat_action import ChatActionSender
 
-from api_parser import APIParser
-from api_parser.types import ActivityTypes
+from app.api_parser import APIParser
+from app.api_parser.types import ActivityTypes
 
 router = Router(name=__name__)
 

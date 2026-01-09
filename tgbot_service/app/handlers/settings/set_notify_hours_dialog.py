@@ -7,8 +7,8 @@ from aiogram_dialog.widgets.kbd import Checkbox, Multiselect, Group, Row, Cancel
 from aiogram_dialog.widgets.text import Const, Format
 from loguru import logger
 
-from api_parser import APIParser
-from states.settings import SetNotifyHoursSG
+from app.api_parser import APIParser
+from app.states.settings import SetNotifyHoursSG
 
 NEED_EXAMPLE_BTN_ID: str = "need_example"
 HOURS_SELECTED_BTN_ID: str = "hours_select"
