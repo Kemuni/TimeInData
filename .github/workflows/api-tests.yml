@@ -64,7 +64,7 @@ jobs:
       - name: Debug job
         if: always()
         run: |
-          coverage json -o -
+          uv run coverage json -o -
 
 #      - name: Upload coverage to Codecov
 #        if: always()
