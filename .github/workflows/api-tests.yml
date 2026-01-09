@@ -55,13 +55,6 @@ jobs:
         run: |
           COVERAGE_FILE=.coverage uv run coverage run -m pytest tests/
 
-      - name: Проверить, что .coverage создан (Отладка)
-        run: |
-          echo "Содержимое текущей директории (./api_service):"
-          ls -la
-          echo "Ищем файлы покрытия во всём проекте:"
-          find ${{ github.workspace }} -name ".coverage*" 2>/dev/null
-
       - name: Generate coverage report
         if: always()
         run: |
@@ -84,4 +77,4 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           MINIMUM_GREEN: 80
           MINIMUM_ORANGE: 60
-          COVERAGE_PATH: ./api_service/.coverage
+          COVERAGE_PATH: ./.coverage
