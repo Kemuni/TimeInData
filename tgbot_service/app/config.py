@@ -96,35 +96,33 @@ class RedisConfig(BaseSettings):
 
     Attributes
     ----------
-    redis_user : Optional(str)
+    user : Optional(str)
         The username used to authenticate with Redis.
-    redis_password : Optional(str)
+    password : Optional(str)
         The password used to authenticate with Redis.
-    redis_host : str
+    host : str
         The host where Redis server is located.
-    redis_port : int
-        The port where Redis server is listening.
-    redis_path : str
+    port : int
+        The port where Redis server is listening to.
+    path : str
         The path where Redis server is located.
     """
     model_config = get_base_model_config() | SettingsConfigDict(env_prefix='REDIS_')
 
-    redis_user: Optional[str] = None
-    redis_password: Optional[str] = None
-    redis_port: int = 6379
-    redis_host: str = 'localhost'
-    redis_path: str = '/0'
+    password: Optional[str] = None
+    port: int = 6379
+    host: str = 'localhost'
+    path: str = Field(default='/0', validation_alias='PATH_TG_BOT')
 
     @property
     def url(self) -> str:
         """ Constructs and returns a Redis DSN (Data Source Name) for this database configuration. """
         return str(RedisDsn.build(
             scheme='redis',
-            username=self.redis_user,
-            password=self.redis_password,
-            host=self.redis_host,
-            port=self.redis_port,
-            path=self.redis_path
+            password=self.password,
+            host=self.host,
+            port=self.port,
+            path=self.path
         ))
 
 
@@ -146,13 +144,11 @@ class Config(BaseSettings):
     debug: bool = 0
 
     tg_bot: TgBotConfig = TgBotConfig()
-
     msg_texts: MessagesTextConfig = MessagesTextConfig()
-
-    api_domain: str
-
     redis: RedisConfig = RedisConfig()
     rabbitmq: RabbitMQConfig = RabbitMQConfig()
+
+    api_domain: str
 
 
 @lru_cache

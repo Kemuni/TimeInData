@@ -81,11 +81,13 @@ def register_middlewares(dp: Dispatcher) -> None:
 def get_storage() -> Union[RedisStorage, MemoryStorage]:
     """ Return storage based on the provided configuration. """
     if get_config().tg_bot.use_redis:
+        logger.info('Using Redis storage')
         return RedisStorage.from_url(
             get_config().redis.url,
             key_builder=DefaultKeyBuilder(with_bot_id=True, with_destiny=True),
         )
     else:
+        logger.info('Using Memory storage')
         return MemoryStorage()
 
 
