@@ -21,6 +21,7 @@ jobs:
     name: Run tests with coverage
     runs-on: ubuntu-latest
     permissions:
+      # Gives the action the necessary permissions for creating checks
       checks: write
       # Gives the action the necessary permissions for publishing new
       # comments in pull requests.
@@ -54,7 +55,7 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          COVERAGE_FILE=.coverage uv run coverage run -m pytest tests/ --junitxml=test-results.xml
+          uv run coverage run -m pytest tests/ --junitxml=test-results.xml
 
       - name: Generate coverage report
         if: always()
