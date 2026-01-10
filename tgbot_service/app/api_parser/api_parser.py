@@ -4,14 +4,16 @@ from typing import AsyncIterator, List, Optional, TypeVar, Type
 import httpx
 from pydantic import TypeAdapter, ValidationError
 
-from app.api_parser.types import (
+from app.types import (
     APIResponse,
     UserOut,
     Activity,
     ActivityBaseIn,
     ActivitiesSummaryOut,
     UserNotificationsSettingsOut,
-    UserTimeZoneDeltaOut, UserNotifyHours
+    UserTimeZoneDeltaOut,
+    UserNotifyHours,
+    MissingActivitySlotsData
 )
 from app.config import get_config
 from app.exceptions import APIError
@@ -31,8 +33,7 @@ class APIParser:
     GET_USER_LATEST_ACTIVITY_URI: str = API_DOMAIN + "/users/{user_id}/activities/latest"
     POST_USER_ACTIVITIES_URI: str = API_DOMAIN + "/users/{user_id}/activities"
     GET_USER_ACTIVITIES_SUMMARY_URI: str = API_DOMAIN + "/users/{user_id}/activities/summary"
-
-    DATETIME_FORMAT: str = '%Y-%m-%dT%H:%M:%S'
+    GET_USER_MISSING_SLOTS_URI: str = API_DOMAIN + "/users/{user_id}/activities/missing_slots/closest"
 
     def __init__(self, client: httpx.AsyncClient):
         self.client = client
@@ -163,8 +164,9 @@ class APIParser:
         :param user_id: Telegram ID of user.
         :param activities: Activities to add.
         """
+
         activity_data = {
-            "activities": [TypeAdapter(ActivityBaseIn).dump_json(activity) for activity in activities]
+            "activities": [TypeAdapter(ActivityBaseIn).dump_python(activity, mode='json') for activity in activities]
         }
         response = await self.client.post(self.POST_USER_ACTIVITIES_URI.format(user_id=user_id), json=activity_data)
         response.raise_for_status()
@@ -179,3 +181,14 @@ class APIParser:
         response = await self.client.get(self.GET_USER_ACTIVITIES_SUMMARY_URI.format(user_id=user_id))
         summary = self._parse_response(response, Optional[ActivitiesSummaryOut])
         return summary
+
+    async def get_closest_activity_missing_slots(self, user_id: int) -> MissingActivitySlotsData:
+        """
+        Get data about the closest activity missing slots.
+
+        :param user_id: Telegram ID of user.
+        :return: Missing activity slots data.
+        """
+        response = await self.client.get(self.GET_USER_MISSING_SLOTS_URI.format(user_id=user_id))
+        missing_slots_data = self._parse_response(response, MissingActivitySlotsData)
+        return missing_slots_data
