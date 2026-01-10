@@ -86,6 +86,7 @@ dialog = Dialog(
                 Const("Set activity 🚩"),
                 id=TO_SET_ACTIVITIES_BTN_ID,
                 state=SetActivityDialogSG.start,
+                mode=StartMode.RESET_STACK,
             ),
             Cancel(
                 Const("Exit ❌"),
