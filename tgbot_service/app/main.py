@@ -99,7 +99,7 @@ def main() -> None:
         token=get_config().tg_bot.token.get_secret_value(),
         default=DefaultBotProperties(parse_mode=ParseMode.HTML)
     )
-    dp = Dispatcher(storage=get_storage(), events_isolation=SimpleEventIsolation(), skip_updates=True)
+    dp = Dispatcher(storage=get_storage(), events_isolation=SimpleEventIsolation(), skip_updates=get_config().debug)
     dp.startup.register(on_startup)
     dp.shutdown.register(on_shutdown)
 

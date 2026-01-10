@@ -117,6 +117,8 @@ class APIConfig(BaseSettings):
         The host on which the API will run
     port : int
         The host on which the API will listen to
+    workers : int | None
+        The number of worker processes to use.
     """
     model_config = get_base_model_config() | SettingsConfigDict(env_prefix='API_')
 

@@ -115,7 +115,7 @@ dialog = Dialog(
         ),
         Row(
             Cancel(
-                text=Const('Cancel ❌')
+                text=Const('Back ⬅️')
             ),
             Button(
                 text=Const('Save 💾'),
