@@ -29,7 +29,7 @@ dialog = Dialog(
                 state=SetNotifyHoursSG.set_time,
             ),
             Cancel(
-                text=Const('Cancel ❌')
+                text=Const('Back ⬅️')
             ),
         ),
         state=SettingsDialogSG.main_menu,

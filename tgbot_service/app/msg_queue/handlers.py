@@ -16,6 +16,6 @@ async def handle_notify_users(message: ReminderRabbitMessage):
         logger.info(f'Sending "SET ACTIVITIES" notification to {len(message.user_ids)} users...')
         await send_bunch_messages(
             message.user_ids,
-            "It's time to set your activity! Type /set_activity command"
+            "👋 Hey! It's time to set your activity!\n Type /set_activity command"
         )
         logger.info(f'Successfully sent "SET ACTIVITIES" notification to {len(message.user_ids)} users!')
