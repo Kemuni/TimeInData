@@ -19,7 +19,7 @@ async def getter(dialog_manager: DialogManager, **_):
     counter_value = dialog_manager.find(COUNTER_BTN_ID).get_value()
     today = datetime.utcnow()
     return {
-        "user_time_str": f"{(today.hour + counter_value) % 24}:{today.minute:01d}"
+        "user_time_str": f"{((today.hour + counter_value) % 24):02d}:{today.minute:02d}"
     }
 
 
@@ -68,7 +68,7 @@ dialog = Dialog(
             "Set your currently time that you have by tapping the buttons below! 👇\n"
         ),
         Format(
-            "Your current time is <b>{user_time_str}</b>"
+            "Is your current time <b>{user_time_str}</b> ?"
         ),
         Counter(
             id=COUNTER_BTN_ID,
@@ -91,7 +91,7 @@ dialog = Dialog(
         ),
         Row(
             Cancel(
-                text=Const('Cancel ❌')
+                text=Const('Back ⬅️')
             ),
             Button(
                 text=Const('Save 💾'),

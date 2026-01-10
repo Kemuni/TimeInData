@@ -224,8 +224,8 @@ async def get_activity_summary(
     summary = await db.users.get_activities_summary(user_id)
     activities_summary = schemas.UserActivitiesSummaryOut(
         data=[
-            schemas.UserActivitySummary(type_id=activity_type, type_name=activity_type.name, amount=amount)
-            for activity_type, amount in summary
+            schemas.UserActivitySummary(activity_type=activity_type, hours_amount=hours_amount)
+            for activity_type, hours_amount in summary
         ]
     )
     return SuccessResponse(data=activities_summary)

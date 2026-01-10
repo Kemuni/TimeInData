@@ -37,7 +37,14 @@ async def lifespan(_: FastAPI):
 
 
 def init_app() -> FastAPI:
-    application = FastAPI(lifespan=lifespan)
+    application = FastAPI(
+        lifespan=lifespan,
+        title="Time In Data API",
+        description="API service for Time In Data project",
+        version="1.0.0",
+        docs_url='/docs' if get_config().debug else None,
+        redoc_url='/redoc_url' if get_config().debug else None,
+    )
 
     application.add_middleware(
         CORSMiddleware,
@@ -63,7 +70,8 @@ def main() -> None:
         host=get_config().api.host,
         port=get_config().api.port,
         log_config=LOGGING_CONFIG,
-        reload=True,
+        workers=get_config().api.workers if not get_config().debug else None,
+        reload=get_config().debug,
     )
 
 

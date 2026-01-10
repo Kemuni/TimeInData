@@ -7,10 +7,10 @@ function create_user_and_database() {
 	local database=$(echo $1 | tr ',' ' ' | awk  '{print $1}')
 	local owner=$(echo $1 | tr ',' ' ' | awk  '{print $2}')
 	echo "  Creating database '$database' with owner '$owner'"
-	psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<-EOSQL
+	psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" -d "$POSTGRES_DB" <<-EOSQL
 	    SELECT 'CREATE USER $owner' WHERE NOT EXISTS (SELECT FROM pg_user WHERE usename = '$owner')\gexec
-	    CREATE DATABASE "$database" OWNER $owner;
-	    GRANT ALL PRIVILEGES ON DATABASE "$database" TO $owner;
+	    CREATE DATABASE "$database" OWNER "$owner";
+	    GRANT ALL PRIVILEGES ON DATABASE "$database" TO "$owner";
 EOSQL
 }
 

@@ -47,12 +47,12 @@ dialog = Dialog(
             "There are <b>8 type</b> of activities:\n"
             "1. Sleep 😴\n"
             "2. Work 💰\n"
-            "3. Studying 👨‍🏫\n"
+            "3. Study 👨‍🏫\n"
             "4. Family 👪\n"
             "5. Friends 🤝\n"
-            "6. Passive 😐\n"
-            "7. Exercise 🏋️\n"
-            "8. Reading 📖\n"
+            "6. Relax 😐\n"
+            "7. Sport 🏋️\n"
+            "8. Games 🎮\n"
             "\n"
             "And after some time I will show you in diagrams and graphs how many time do you spend for each activity. 📈\n"
             "This can be helpful for you to plan your time more accurately!"
@@ -88,7 +88,7 @@ dialog = Dialog(
                 state=SetActivityDialogSG.start,
             ),
             Cancel(
-                Const("Exit"),
+                Const("Exit ❌"),
                 id=EXIT_BTN_ID,
             ),
         ),

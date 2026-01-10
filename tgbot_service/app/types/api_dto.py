@@ -1,27 +1,16 @@
-import enum
 from datetime import date, datetime
 from typing import List, TypeVar, Any, Generic, Optional
 
 from pydantic.dataclasses import dataclass
-from pydantic import Field
 
-
-class ActivityTypes(str, enum.Enum):
-    SLEEP = "SLEEP"
-    WORK = "WORK"
-    STUDY = "STUDY"
-    FAMILY = "FAMILY"
-    FRIENDS = "FRIENDS"
-    RELAX = "RELAX"
-    SPORT = "SPORT"
-    GAMES = "GAMES"
+from app.types.activity_types import ActivityTypes
 
 
 @dataclass(slots=True)
 class ActivityBaseIn:
-    type: int
+    type: str
     utc_hour: int
-    utc_date: date = Field(..., title='Activity date in "%Y-%m-%d" format')
+    utc_date: date
 
 
 @dataclass(slots=True)
@@ -38,9 +27,8 @@ class Activity(ActivityBaseOut):
 
 @dataclass(slots=True)
 class ActivitySummary:
-    type_name: str
-    type_id: ActivityTypes
-    amount: int
+    activity_type: ActivityTypes
+    hours_amount: int
 
 
 @dataclass(slots=True)
@@ -69,6 +57,25 @@ class UserNotificationsSettingsOut:
 @dataclass(slots=True)
 class UserTimeZoneDeltaOut:
     tz_delta: int
+
+
+@dataclass(slots=True)
+class DateRange:
+    from_date: datetime
+    to_date: datetime
+
+
+@dataclass(slots=True)
+class MissingActivitySlot:
+    utc_date: date
+    utc_hour: int
+
+
+@dataclass(slots=True)
+class MissingActivitySlotsData:
+    has_missing_slots: bool
+    date_range: DateRange
+    missing_slots: List[MissingActivitySlot]
 
 
 @dataclass(slots=True)
