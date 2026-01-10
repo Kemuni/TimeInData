@@ -145,7 +145,7 @@ services:
         condition: service_started
     develop:
       watch:
-        - action: sync
+        - action: sync+restart
           path: ./tgbot_service/app
           target: /app/app
         - action: rebuild
