@@ -55,7 +55,7 @@ class ActivityTrackerService:
         to_date = min(
             from_date + timedelta(hours=max_missing_slots),
             # if now is 22:33, we can set activity only to 21:00, so we subtract 1 hour
-            datetime(utc_now.year, utc_now.month, utc_now.day, utc_now.hour - 1)
+            datetime(utc_now.year, utc_now.month, utc_now.day, utc_now.hour) - timedelta(hours=1)
         )
         return MissingSlotsDateRange(from_date=from_date, to_date=to_date)
 

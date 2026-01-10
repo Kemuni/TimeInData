@@ -71,9 +71,8 @@ class UserOut(UserBase):
 
 
 class UserActivitySummary(BaseModel):
-    type_name: str
-    type_id: ActivityTypes
-    amount: int
+    activity_type: str
+    hours_amount: int
 
 
 class UserActivitiesSummaryOut(BaseModel):

@@ -163,7 +163,7 @@ class UserRepo(BaseRepo):
         result = await self.session.execute(select_stmt)
         return result.scalar_one()
 
-    async def get_activities_summary(self, user_id: int) -> Sequence[Row[tuple[ActivityTypes, int]]]:
+    async def get_activities_summary(self, user_id: int) -> Sequence[Row[tuple[str, int]]]:
         """
         Get user's activities summary like [Activity, amount_of_hours].
 
