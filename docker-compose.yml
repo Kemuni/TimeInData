@@ -170,7 +170,7 @@ services:
       - traefik.http.routers.time-in-data-project-tgbot-https.tls.certresolver=le
 
       # Enable redirection for HTTP and HTTPS
-      - traefik.http.routers.time-in-data-project-backend-http.middlewares=https-redirect
+      - traefik.http.routers.time-in-data-project-tgbot-http.middlewares=https-redirect
 
   adminer:
     image: adminer
