@@ -1,5 +1,5 @@
 import {ActivityButtonsSelect} from "@/components/ActivityButtonsSelect.tsx";
-import {Button, Modal, Placeholder, Spinner, Subheadline} from "@telegram-apps/telegram-ui";
+import {Button, Modal, Placeholder, Section, Spinner, Subheadline} from "@telegram-apps/telegram-ui";
 import {ActivityTypesButtons} from "@/components/ActivityTypesButtons.tsx";
 import {UseActivityButtonsReturn} from "@/hooks/useActivityButtons.ts";
 import {FC, useEffect, useMemo, useState} from "react";
@@ -75,17 +75,19 @@ export const HoursActivityForm: FC<HoursActivityFormProps> = ({
         }
       </Modal>
       <article
-        className="[&>section]:bg-(--tgui--bg_color) [&>section]:px-2 [&>section]:py-3 [&>section]:mb-2 [&>section]:rounded-lg"
+        className="[&>section]:bg-(--tgui--section_bg_color) [&>section]:px-2 [&>section]:py-3 [&>section]:mb-2 [&>section]:rounded-lg"
       >
         <ActivityButtonsSelect
           activitiesStates={activityButtonStates}
           isToggledButton={isActivityBtnToggled}
           onToggleButton={toggleActivityBtn}
         />
-        <section>
+        <Section>
+        {/*<section className="bg-[var(--tgui--bg_color)]">*/}
           <Subheadline level="1" weight="3" className="pb-2">Select type</Subheadline>
           <ActivityTypesButtons onBtnClick={changeActivityOfToggledBtns}/>
-        </section>
+        {/*</section>*/}
+        </Section>
       </article>
     </>
   );
