@@ -152,7 +152,8 @@ async def process_message(message: types.Message, _, manager: DialogManager) -> 
     ]
     await api.add_user_activities(message.from_user.id, activities_for_api)
 
-    await manager.next()
+    await message.reply('New activities saved! 🎉')
+    await manager.done()
 
 
 async def on_start(_, manager: DialogManager) -> None:
@@ -162,7 +163,7 @@ async def on_start(_, manager: DialogManager) -> None:
     api_missing_slots_data = await api.get_closest_activity_missing_slots(manager.event.from_user.id)
 
     # Provide date to dialog about missing activity slots
-    if not api_missing_slots_data.has_missing_slots:
+    if not api_missing_slots_data.has_missing_slots or api_missing_slots_data.missing_slots is None:
         if isinstance(manager.event, types.CallbackQuery):
             msg = manager.event.message
         else:
@@ -216,10 +217,6 @@ dialog = Dialog(
         ),
         getter=getter,
         state=SetActivityDialogSG.start,
-    ),
-    Window(
-        Const('New activities saved! 🎉'),
-        state=SetActivityDialogSG.finish,
     ),
     on_start=on_start,
 )

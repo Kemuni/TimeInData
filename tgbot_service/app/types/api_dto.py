@@ -74,8 +74,8 @@ class MissingActivitySlot:
 @dataclass(slots=True)
 class MissingActivitySlotsData:
     has_missing_slots: bool
-    date_range: DateRange
-    missing_slots: List[MissingActivitySlot]
+    date_range: Optional[DateRange]
+    missing_slots: Optional[List[MissingActivitySlot]]
 
 
 @dataclass(slots=True)

@@ -109,6 +109,34 @@ services:
         - action: rebuild
           path: ./api_service/pyproject.toml
 
+  scheduler_service:
+    build:
+      context: ./api_service
+      dockerfile: Dockerfile
+    container_name: scheduler_service
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DEBUG: "1"
+      POSTGRES_USER: ${POSTGRES_USER?Variable not set}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD?Variable not set}
+      POSTGRES_DB: ${POSTGRES_DB?Variable not set}
+      POSTGRES_SERVER: postgres
+      POSTGRES_PORT: ${POSTGRES_PORT?Variable not set}
+      POSTGRES_JOB_STORE_DB: ${POSTGRES_JOB_STORE_DB?Variable not set}
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME?Variable not set}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD?Variable not set}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: ${RABBITMQ_PORT?Variable not set}
+      RABBITMQ_VHOST: ${RABBITMQ_VHOST?Variable not set}
+    command: [ "uv", "run", "python", "-m", "app.scheduler_main" ]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
   tgbot_service:
     build:
       context: ./tgbot_service
