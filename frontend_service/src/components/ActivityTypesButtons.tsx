@@ -10,11 +10,11 @@ interface ActivityTypesButtonsProps {
 }
 
 export const ActivityTypesButtons: FC<ActivityTypesButtonsProps> = ({ onBtnClick }) => (
-  <InlineButtons style={{flexFlow: "wrap"}}>
+  <InlineButtons style={{display: "grid", gridTemplateColumns: "repeat(4, 1fr)"}} mode="gray">
     {(Object.keys(ActivityType) as Array<keyof typeof ActivityType>).map((key) => {
       const activity = ActivityType[key];
       const IconComponent = activityToIcon[activity];
-      return (<InlineButtonsItem mode="gray" key={key} text={key} onClick={() => onBtnClick(activity)}>
+      return (<InlineButtonsItem key={key} text={key} onClick={() => onBtnClick(activity)}>
         <IconComponent />
       </InlineButtonsItem>);
     })}

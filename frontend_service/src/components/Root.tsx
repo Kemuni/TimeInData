@@ -1,4 +1,4 @@
-import { App } from '@/components/App.tsx'
+import { App } from '@/components/App.tsx';
 import { ErrorBoundary } from '@/components/ErrorBoundary.tsx';
 
 function ErrorBoundaryError({ error }: { error: unknown }) {
