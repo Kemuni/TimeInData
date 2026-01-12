@@ -126,9 +126,9 @@ services:
     container_name: scheduler_service
     restart: unless-stopped
     env_file:
-      - .env
+      - .env.production
     environment:
-      DEBUG: "1"
+      DEBUG: "0"
       POSTGRES_USER: ${POSTGRES_USER?Variable not set}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD?Variable not set}
       POSTGRES_DB: ${POSTGRES_DB?Variable not set}
@@ -225,6 +225,39 @@ services:
       - traefik.http.routers.time-in-data-project-adminer-https.tls=true
       - traefik.http.routers.time-in-data-project-adminer-https.tls.certresolver=le
       - traefik.http.services.time-in-data-project-adminer.loadbalancer.server.port=8080
+
+  frontend_tma:
+    build:
+      context: ./frontend_service
+      dockerfile: Dockerfile
+    container_name: frontend_tma
+    restart: unless-stopped
+    networks:
+      - traefik-public
+    env_file:
+      - .env.production
+    environment:
+      VITE_API_DOMAIN: "https://api.${DOMAIN?Variable not set}"
+    depends_on:
+      api_service:
+        condition: service_started
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik-public
+      - traefik.constraint-label=traefik-public
+
+      - traefik.http.services.time-in-data-project-tma.loadbalancer.server.port=3000
+
+      - traefik.http.routers.time-in-data-project-tma-http.rule=Host(`tma.${DOMAIN?Variable not set}`)
+      - traefik.http.routers.time-in-data-project-tma-http.entrypoints=http
+
+      - traefik.http.routers.time-in-data-project-tma-https.rule=Host(`tma.${DOMAIN?Variable not set}`)
+      - traefik.http.routers.time-in-data-project-tma-https.entrypoints=https
+      - traefik.http.routers.time-in-data-project-tma-https.tls=true
+      - traefik.http.routers.time-in-data-project-tma-https.tls.certresolver=le
+
+      # Enable redirection for HTTP and HTTPS
+      - traefik.http.routers.time-in-data-project-tma-http.middlewares=https-redirect
 
 volumes:
   postgres_data:
