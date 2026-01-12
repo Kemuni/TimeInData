@@ -9,30 +9,16 @@ import {Icon24Gamepad} from "@/components/icons/Icon24Gamepad.tsx";
 import {Icon24Suitcase} from "@/components/icons/Icon24Suitcase.tsx";
 import {Icon24NightMode} from "@/components/icons/Icon24NightMode.tsx";
 
-
 export enum ActivityType {
   Sleep = "SLEEP",
   Work = "WORK",
   Study = "STUDY",
   Family = "FAMILY",
   Friends = "FRIENDS",
-  Passive = "PASSIVE",
+  Relax = "Relax",
   Sport = "SPORT",
   Games = "GAMES",
 }
-
-
-export enum ActivityIntType {
-  Sleep = 1,
-  Work,
-  Study,
-  Family,
-  Friends,
-  Passive,
-  Sport,
-  Games,
-}
-
 
 export const activityToIcon: { [key in ActivityType]: FC } = {
   [ActivityType.Sleep]: Icon24NightMode,
@@ -40,7 +26,7 @@ export const activityToIcon: { [key in ActivityType]: FC } = {
   [ActivityType.Study]: Icon24Book,
   [ActivityType.Family]: Icon24Heart,
   [ActivityType.Friends]: Icon24Group,
-  [ActivityType.Passive]: Icon24TeaCup,
+  [ActivityType.Relax]: Icon24TeaCup,
   [ActivityType.Sport]: Icon24Dumbbell,
   [ActivityType.Games]: Icon24Gamepad,
 };
