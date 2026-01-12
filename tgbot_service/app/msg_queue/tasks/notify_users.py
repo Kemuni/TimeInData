@@ -1,8 +1,10 @@
 import asyncio
+from typing import Optional
 
 from aiogram import exceptions, Bot
-from aiogram.enums import ParseMode
 from aiogram.client.default import DefaultBotProperties
+from aiogram.enums import ParseMode
+from aiogram.types import InlineKeyboardMarkup
 from aiohttp import web
 from loguru import logger
 
@@ -13,18 +15,21 @@ routes = web.RouteTableDef()
 MAX_MSG_RETRIES: int = 5
 
 
-async def send_message(bot: Bot, user_id: int, text: str, retry_counter: int = 0) -> bool:
+async def send_message(
+        bot: Bot, user_id: int, text: str, keyboard_markup: Optional[InlineKeyboardMarkup] = None, retry_counter: int = 0
+) -> bool:
     """
     Safely send a message to the user.
 
     :param bot: Aiogram instance of the bot.
     :param user_id: The telegram ID of the message recipient.
     :param text: The text of message.
+    :param keyboard_markup: The keyboard to send with the message.
     :param retry_counter: Current number of attempts of message sending.
     :return: True if the message was successfully sent, False otherwise.
     """
     try:
-        await bot.send_message(user_id, text)
+        await bot.send_message(user_id, text, reply_markup=keyboard_markup)
     except exceptions.TelegramForbiddenError:
         logger.error(f"Target [ID:{user_id}]: Blocked by user")
     except exceptions.TelegramNotFound:
@@ -43,7 +48,9 @@ async def send_message(bot: Bot, user_id: int, text: str, retry_counter: int = 0
     return False
 
 
-async def send_bunch_messages(user_ids: list[int], text: str) -> None:
+async def send_bunch_messages(
+        user_ids: list[int], text: str, keyboard_markup: Optional[InlineKeyboardMarkup] = None
+) -> None:
     """ Send a message to all users with id in `user_ids` """
     bot = Bot(
         token=get_config().tg_bot.token.get_secret_value(),
@@ -55,7 +62,7 @@ async def send_bunch_messages(user_ids: list[int], text: str) -> None:
     try:
         for user_id in user_ids:
             is_success = await send_message(
-                bot, user_id, text
+                bot, user_id, text, keyboard_markup=keyboard_markup
             )
             message_counter += 1 if is_success else 0
             await asyncio.sleep(0.05)
