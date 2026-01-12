@@ -166,6 +166,7 @@ services:
       TG_BOT_DOMAIN: ${TG_BOT_DOMAIN:-}
       TG_BOT_USE_REDIS: ${TG_BOT_USE_REDIS:-true}
       API_DOMAIN: "http://api_service:${API_PORT:-8000}"
+      MINIAPP_URL: ${MINIAPP_URL:-}
       REDIS_HOST: redis
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       REDIS_PORT: ${REDIS_PORT?-6379}

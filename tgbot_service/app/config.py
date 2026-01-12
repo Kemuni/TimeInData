@@ -149,6 +149,7 @@ class Config(BaseSettings):
     rabbitmq: RabbitMQConfig = RabbitMQConfig()
 
     api_domain: str
+    miniapp_url: Optional[str] = None
 
 
 @lru_cache
