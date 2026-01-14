@@ -15,7 +15,7 @@ export enum ActivityType {
   Study = "STUDY",
   Family = "FAMILY",
   Friends = "FRIENDS",
-  Relax = "Relax",
+  Relax = "RELAX",
   Sport = "SPORT",
   Games = "GAMES",
 }
