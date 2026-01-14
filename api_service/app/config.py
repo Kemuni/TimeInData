@@ -1,9 +1,11 @@
+import ipaddress
 import os
 from functools import lru_cache
+from typing import List
 from urllib.parse import quote
 
 from loguru import logger
-from pydantic import PostgresDsn
+from pydantic import PostgresDsn, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -119,12 +121,35 @@ class APIConfig(BaseSettings):
         The host on which the API will listen to
     workers : int | None
         The number of worker processes to use.
+    trusted_networks : list[str]
+        The list of trusted networks which are allowed to make requests to the API without authentication.
+         (for example, "172.16.0.0/12", "10.0.0.0/8", "127.0.0.1/32").
+    tg_bot_token : str
+        The token of Telegram bot.
     """
     model_config = get_base_model_config() | SettingsConfigDict(env_prefix='API_')
 
     host: str = '127.0.0.1'
     port: int = 8000
     workers: int | None = None
+
+    trusted_networks: list[str] = ["172.16.0.0/12", "10.0.0.0/8", "127.0.0.1/32"]
+    tg_bot_token: str
+
+    @field_validator('trusted_networks', mode='after')
+    def validate_trusted_networks(cls, v: List[str]) -> List[str]:
+        if not v:
+            raise ValueError('trusted_networks cannot be empty')
+
+        validated_networks = []
+        for network in v:
+            try:
+                ipaddress.ip_network(network)
+                validated_networks.append(network)
+            except ValueError:
+                raise ValueError(f'Invalid network format: {network}')
+
+        return validated_networks
 
 
 class Config(BaseSettings):
