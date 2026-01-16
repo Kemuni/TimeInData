@@ -36,7 +36,7 @@ only_internal_network_allowed = HTTPInternalNetworkAuth(
 )
 
 
-async def get_current_current_user(
+async def get_current_user(
     tma_user_credentials: HTTPTMACredentials = Depends(tma_user_auth_schema),
     internal_network_user_credentials: HTTPUserCredentials = Depends(internal_network_user_auth_schema),
     db: DatabaseRepo = Depends(get_db),
