@@ -6,7 +6,6 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_config
-from app.middlewares.network_auth import NetworkOrTMAAuthMiddleware
 from app.utils.exception_handlers import pydantic_validation_exception_handler, general_exception_handler
 from app.logger.log_conf import LOGGING_CONFIG
 from app.msg_queue.message_publisher import message_publisher
@@ -39,13 +38,6 @@ def init_app() -> FastAPI:
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
-    )
-    # Middleware for checking if request is from trusted network or has valid TMA init data with fresh `auth_date`
-    # Also set user id to request state
-    application.add_middleware(
-        NetworkOrTMAAuthMiddleware,
-        allowed_networks=get_config().api.trusted_networks,
-        tg_bot_token=get_config().api.tg_bot_token,
     )
 
     # Register exception handlers
