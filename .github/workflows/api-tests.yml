@@ -54,6 +54,8 @@ jobs:
           uv sync --all-groups
 
       - name: Run tests with coverage
+        env:
+          API_TG_BOT_TOKEN: 'test-tg-bot-token'
         run: |
           uv run coverage run -m pytest tests/ --junitxml=test-results.xml
 

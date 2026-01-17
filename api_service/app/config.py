@@ -137,6 +137,7 @@ class APIConfig(BaseSettings):
     tg_bot_token: str = Field(..., validation_alias=AliasChoices('API_TG_BOT_TOKEN', 'TG_BOT_TOKEN'))
 
     @field_validator('trusted_networks', mode='after')
+    @classmethod
     def validate_trusted_networks(cls, v: List[str]) -> List[str]:
         if not v:
             raise ValueError('trusted_networks cannot be empty')
