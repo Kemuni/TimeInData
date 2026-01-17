@@ -99,7 +99,7 @@ class HTTPInternalNetworkUserAuth(HTTPInternalNetworkAuth):
             or
             "Write user data from Telegram in the Authorization header.\n\n"
             "Format: \"INTERNAL <json_of_user_data>\"\n\n"
-            "Example: \"INTERNAL {\"user_id\": 123456789, \"language_code\": \"en\", \"username\": \"user_name\"}\""
+            "Example: \"INTERNAL {\"id\": 123456789, \"language_code\": \"en\", \"username\": \"user_name\"}\""
         )
         self.model = HTTPBearerModel(description=description)
 
