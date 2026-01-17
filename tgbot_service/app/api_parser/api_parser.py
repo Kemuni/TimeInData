@@ -1,7 +1,9 @@
+import json
 from contextlib import asynccontextmanager
 from typing import AsyncIterator, List, Optional, TypeVar, Type
 
 import httpx
+from loguru import logger
 from pydantic import TypeAdapter, ValidationError
 
 from app.types import (
@@ -25,23 +27,38 @@ class APIParser:
 
     API_DOMAIN: str = get_config().api_domain
     GET_HEALTHCHECK_URI: str = API_DOMAIN + "/healthcheck"
-    PUT_USER_URI: str = API_DOMAIN + "/users"
-    PUT_USER_NOTIFICATIONS_SETTINGS_URI: str = API_DOMAIN + "/users/{user_id}/settings/notifications"
-    GET_USER_NOTIFICATIONS_SETTINGS_URI: str = API_DOMAIN + "/users/{user_id}/settings/notifications"
-    PUT_USER_TIMEZONE_SETTINGS_URI: str = API_DOMAIN + "/users/{user_id}/settings/timezone"
-    GET_USER_TIMEZONE_SETTINGS_URI: str = API_DOMAIN + "/users/{user_id}/settings/timezone"
-    GET_USER_LATEST_ACTIVITY_URI: str = API_DOMAIN + "/users/{user_id}/activities/latest"
-    POST_USER_ACTIVITIES_URI: str = API_DOMAIN + "/users/{user_id}/activities"
-    GET_USER_ACTIVITIES_SUMMARY_URI: str = API_DOMAIN + "/users/{user_id}/activities/summary"
-    GET_USER_MISSING_SLOTS_URI: str = API_DOMAIN + "/users/{user_id}/activities/missing_slots/closest"
+    PUT_USER_URI: str = API_DOMAIN + "/user"
+    PUT_USER_NOTIFICATIONS_SETTINGS_URI: str = API_DOMAIN + "/user/settings/notifications"
+    GET_USER_NOTIFICATIONS_SETTINGS_URI: str = API_DOMAIN + "/user/settings/notifications"
+    PUT_USER_TIMEZONE_SETTINGS_URI: str = API_DOMAIN + "/user/settings/timezone"
+    GET_USER_TIMEZONE_SETTINGS_URI: str = API_DOMAIN + "/user/settings/timezone"
+    GET_USER_LATEST_ACTIVITY_URI: str = API_DOMAIN + "/user/activities/latest"
+    POST_USER_ACTIVITIES_URI: str = API_DOMAIN + "/user/activities"
+    GET_USER_ACTIVITIES_SUMMARY_URI: str = API_DOMAIN + "/user/activities/summary"
+    GET_USER_MISSING_SLOTS_URI: str = API_DOMAIN + "/user/activities/missing_slots/closest"
 
     def __init__(self, client: httpx.AsyncClient):
         self.client = client
 
     @staticmethod
     @asynccontextmanager
-    async def create_client() -> AsyncIterator[httpx.AsyncClient]:
+    async def create_client_with_auth(user_id: int, username: str, language_code: str) -> AsyncIterator[httpx.AsyncClient]:
         """ Create and return httpx.AsyncClient for initializing APIParser class. """
+        auth_header_value = json.dumps({
+            "id": user_id,
+            "username": username,
+            "language_code": language_code,
+        }, separators=(',', ':'))
+        client = httpx.AsyncClient(headers={"Authorization": f"INTERNAL {auth_header_value}"})
+        try:
+            yield client
+        finally:
+            await client.aclose()
+
+    @staticmethod
+    @asynccontextmanager
+    async def create_client() -> AsyncIterator[httpx.AsyncClient]:
+        """ Create and return httpx.AsyncClient with internal auth header for initializing APIParser class. """
         client = httpx.AsyncClient()
         try:
             yield client
