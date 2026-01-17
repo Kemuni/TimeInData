@@ -104,7 +104,13 @@ class HTTPInternalNetworkUserAuth(HTTPInternalNetworkAuth):
         self.model = HTTPBearerModel(description=description)
 
     async def __call__(self, request: Request) -> Optional[HTTPUserCredentials]:
-        await super().__call__(request)
+        is_allowed = await super().__call__(request)
+        if not is_allowed:
+            if self.auto_error:
+                raise self.make_not_allowed_resource_error()
+            else:
+                return None
+
         authorization = request.headers.get("Authorization")
 
         scheme, raw_user_data = get_authorization_scheme_param(authorization)
