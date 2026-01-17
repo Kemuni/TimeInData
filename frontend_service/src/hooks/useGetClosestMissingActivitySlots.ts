@@ -1,5 +1,6 @@
 import {usersApi} from "@/services";
 import {useApiQuery} from "@/hooks";
+import {useRawInitData} from "@tma.js/sdk-react";
 
 
 export interface DateRange {
@@ -19,11 +20,12 @@ export interface MissingActivitySlots {
   totalMissing: number;
 }
 
-export function useGetClosestMissingActivitySlots(userId?: number) {
+export function useGetClosestMissingActivitySlots() {
+  const rawInitData = useRawInitData();
   return useApiQuery<MissingActivitySlots | null>({
     queryFn: async () => {
-      if (!userId) throw new Error('User ID is required');
-      const response = await usersApi.getClosestMissingActivitySlots(userId);
+      if (!rawInitData) throw new Error('rawInitData is required for authentication');
+      const response = await usersApi.getClosestMissingActivitySlots(rawInitData);
 
       if (!response.success || !response.data) return null;
       const data = response.data;
@@ -47,6 +49,6 @@ export function useGetClosestMissingActivitySlots(userId?: number) {
         totalMissing: Number(data.total_missing),
       };
     },
-    enabled: !!userId,
+    enabled: !!rawInitData,
   });
 }

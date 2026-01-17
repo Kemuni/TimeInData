@@ -15,7 +15,7 @@ export const IndexPage: FC = () => {
     data: missingActivitySlots,
     isLoading,
     error
-  } = useGetClosestMissingActivitySlots(userId);
+  } = useGetClosestMissingActivitySlots();
 
   const {
     mutate: createActivities,
@@ -25,12 +25,10 @@ export const IndexPage: FC = () => {
 
   const createActivitiesByForm = useCallback(
     async (activityButtonStates: ActivityButtonStates) => {
-      if (!userId) throw new Error("User id is not defined");
       if (!activityButtonStates.every((btnState) => btnState.activity !== undefined))
         throw new Error("All activity buttons must be toggled");
 
       await createActivities({
-        userId,
         activities: activityButtonStates
           .map((btnState) => ({
             type: btnState.activity!,
@@ -38,7 +36,7 @@ export const IndexPage: FC = () => {
             utc_hour: btnState.utc_hour,
           })),
       });
-    }, [userId]);
+    }, []);
 
   const {
     activityButtonStates,

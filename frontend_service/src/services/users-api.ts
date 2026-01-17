@@ -39,21 +39,33 @@ export interface MissingActivitySlotsData {
 export interface MissingActivitySlotsResponse extends ApiResponse<MissingActivitySlotsData> {}
 
 export const usersApi = {
-  getLastActivity: async (userId: number) => {
+  getLastActivity: async (rawInitData: string) => {
     const { data } = await apiClient.get<LastActivityResponse | null>(
-      APIEndpointsUrls.GetUserLastActivity(userId)
+      APIEndpointsUrls.GetUserLastActivity(),
+      {
+        headers: { 'Authorization': `TMA ${rawInitData}` },
+      }
     );
     return data;
   },
 
-  getClosestMissingActivitySlots: async (userId: number) => {
+  getClosestMissingActivitySlots: async (rawInitData: string) => {
     const { data } = await apiClient.get<MissingActivitySlotsResponse>(
-      APIEndpointsUrls.GetClosestActivityMissingSlots(userId)
+      APIEndpointsUrls.GetClosestActivityMissingSlots(),
+      {
+        headers: { 'Authorization': `TMA ${rawInitData}` },
+      }
     )
     return data;
   },
 
-  createActivities: async (userId: number, payload: CreateActivitiesPayload) => {
-    await apiClient.post(APIEndpointsUrls.PostNewUserActivities(userId), payload);
+  createActivities: async (payload: CreateActivitiesPayload, rawInitData: string) => {
+    await apiClient.post(
+      APIEndpointsUrls.PostNewUserActivities(),
+      payload,
+      {
+        headers: { 'Authorization': `TMA ${rawInitData}` },
+      }
+    );
   },
 };
