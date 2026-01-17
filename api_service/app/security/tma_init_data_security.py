@@ -84,9 +84,6 @@ class HTTPTMAInitDataAuth(HTTPBase):
         """ Verifying TMA init data by checking if it has valid hash and is not expired """
         try:
             auth_date_timestamp = int(parsed_tma_init_data.get('auth_date', '0'))
-            logger.info(f"AUTH DATE TIMESTAMP: {auth_date_timestamp}")
-            logger.info(f"is valid: {self._is_tma_init_data_valid(parsed_tma_init_data)}")
-            logger.info(f"is expired: {self._is_date_expired(auth_date=datetime.fromtimestamp(auth_date_timestamp, UTC))}")
             return (
                     self._is_tma_init_data_valid(parsed_tma_init_data)
                     and not self._is_date_expired(auth_date=datetime.fromtimestamp(auth_date_timestamp, UTC))

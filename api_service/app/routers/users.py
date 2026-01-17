@@ -222,7 +222,7 @@ async def get_activity_summary(
     """ Get activity summary for user with `user_id`. """
     summary = await db.users.get_activities_summary(current_user.id)
     activities_summary = schemas.UserActivitiesSummaryOut(
-        data=[
+        summary=[
             schemas.UserActivitySummary(activity_type=activity_type, hours_amount=hours_amount)
             for activity_type, hours_amount in summary
         ]

@@ -5,7 +5,7 @@ from typing import List
 from urllib.parse import quote
 
 from loguru import logger
-from pydantic import PostgresDsn, field_validator
+from pydantic import PostgresDsn, field_validator, Field, AliasChoices
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -134,7 +134,7 @@ class APIConfig(BaseSettings):
     workers: int | None = None
 
     trusted_networks: list[str] = ["172.16.0.0/12", "10.0.0.0/8", "127.0.0.1/32"]
-    tg_bot_token: str
+    tg_bot_token: str = Field(..., validation_alias=AliasChoices('API_TG_BOT_TOKEN', 'TG_BOT_TOKEN'))
 
     @field_validator('trusted_networks', mode='after')
     def validate_trusted_networks(cls, v: List[str]) -> List[str]:
