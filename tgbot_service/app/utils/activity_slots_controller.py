@@ -75,7 +75,7 @@ class ActivitySlotsController:
                 local_date=local_slot_datetime.date(),
                 activity_type=None,
             )
-        print('ACTIVITY SLOTS ', activity_slots_store)
+
         return activity_slots_store
 
 
