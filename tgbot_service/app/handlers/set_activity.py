@@ -42,7 +42,7 @@ async def getter(dialog_manager: DialogManager, **_) -> Dict[str, Any]:
     missing_slots_str = ""
     for filtered_slots in slots_controller.get_slots_filtered_by_date():
         activities_str_hours = (f'{slot.local_hour:02d}:00' for slot in filtered_slots.activity_slots)
-        missing_slots_str += f"<b>{filtered_slots.local_date.strftime("%d %B")}</b>: {', '.join(activities_str_hours)}"
+        missing_slots_str += f"<b>{filtered_slots.local_date.strftime("%d %B")}</b>: {', '.join(activities_str_hours)}\n"
     return {
         SHOW_ACTIVITIES_BTN_ID: dialog_manager.find(SHOW_ACTIVITIES_BTN_ID).is_checked(),
         'missing_slots_str': missing_slots_str,
@@ -200,7 +200,7 @@ dialog = Dialog(
             when=SHOW_ACTIVITIES_BTN_ID,
         ),
         Const(
-            '\n🗒 Write in message your activities in format:\n'
+            '\n🗒 Write in message your activities in format <i>(only hours range, date is redundant)</i>:\n'
             '0-9 sleep \n'
             '10-15 work \n'
             '16 passive \n'

@@ -1,5 +1,5 @@
 from fastapi import Request, status
-from fastapi.exceptions import RequestValidationError
+from fastapi.exceptions import RequestValidationError, HTTPException
 from fastapi.responses import JSONResponse
 from loguru import logger
 
@@ -54,6 +54,22 @@ async def pydantic_validation_exception_handler(request: Request, exc: RequestVa
 
 async def general_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     """ Handle all unhandled exceptions with standard format. """
+    # If the exception is HTTPException, return it as is
+    if isinstance(exc, HTTPException):
+        response = APIResponse(
+            success=False,
+            data=None,
+            error=ErrorDetail(
+                code=str(exc.status_code),
+                message=exc.detail
+            )
+        )
+        return JSONResponse(
+            status_code=exc.status_code,
+            content=response.model_dump()
+        )
+
+    # Log all other unhandled exceptions
     logger.error(f"Unhandled exception on {request.url.path}: {exc}", exc_info=True)
 
     response = APIResponse(
