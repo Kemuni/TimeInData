@@ -60,7 +60,9 @@ async def db_session(db_engine: AsyncEngine) -> AsyncGenerator[AsyncSession, Non
 @pytest.fixture
 def app() -> Generator[FastAPI, None, None]:
     from app.main import app
+    import os
 
+    os.environ['API_TG_BOT_TOKEN'] = 'test'
     yield app
 
 
