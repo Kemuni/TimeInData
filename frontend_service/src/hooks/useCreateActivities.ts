@@ -1,6 +1,7 @@
 import {useApiMutation} from "@/hooks";
 import {ActivityType} from "@/types";
 import {CreateActivitiesPayload, usersApi} from "@/services";
+import {useRawInitData} from "@tma.js/sdk-react";
 
 interface CreateActivityVariable {
   type: ActivityType;
@@ -9,13 +10,17 @@ interface CreateActivityVariable {
 }
 
 interface CreateActivitiesVariables {
-  userId: number;
   activities: CreateActivityVariable[];
 }
 
 export function useCreateActivities() {
+  const rawInitData = useRawInitData();
   return useApiMutation<void, CreateActivitiesVariables>({
-    mutationFn: async ({ userId, activities }) => {
+    mutationFn: async ({ activities }) => {
+      if (!rawInitData) {
+        throw new Error('rawInitData is required for authentication');
+      }
+
       const payload: CreateActivitiesPayload = {
         activities: activities.map((item) => ({
           type: item.type.toString(),
@@ -24,7 +29,7 @@ export function useCreateActivities() {
         })),
       };
 
-      await usersApi.createActivities(userId, payload);
+      await usersApi.createActivities(payload, rawInitData);
     },
     onSuccess: () => {
       console.log('Activities created successfully');

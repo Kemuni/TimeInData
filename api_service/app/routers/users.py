@@ -6,13 +6,14 @@ from loguru import logger
 from sqlalchemy.exc import IntegrityError
 
 from app import schemas
+from app.database.models import User
 from app.database.repositories import DatabaseRepo
-from app.dependencies import get_db
+from app.dependencies import get_db, get_current_user
 from app.services.ActivityTrackerService import ActivityTrackerService
 from app.utils.response import SuccessResponse, ErrorResponse
 from app.utils.utcnow import utcnow
 
-router = APIRouter(prefix='/users', tags=['users'])
+router = APIRouter(prefix='/user', tags=['user'])
 
 
 @router.put('', response_model=schemas.APIResponse[schemas.UserOut])
@@ -26,24 +27,24 @@ async def create_or_update(user: schemas.UserBase, db: DatabaseRepo = Depends(ge
 
 
 @router.put(
-    '/{user_id}/settings/notifications',
+    '/settings/notifications',
     response_model=schemas.APIResponse[schemas.UserNotificationsSettingsOut]
 )
 async def update_notifications_settings(
-        user_id: schemas.TelegramUserId,
-        hours_data: schemas.UserNotificationsSettingsIn,
-        is_in_utc: bool = False,
-        db: DatabaseRepo = Depends(get_db)
+    hours_data: schemas.UserNotificationsSettingsIn,
+    is_in_utc: bool = False,
+    db: DatabaseRepo = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """  Update user hours to notify in the database. """
-    tz_delta = await db.users.get_tz_delta(user_id)
+    tz_delta = current_user.time_zone_delta
     if is_in_utc:
         new_notify_utc_hours = hours_data.notify_hours
         new_notify_local_hours = [(utc_hour + tz_delta) % 24 for utc_hour in new_notify_utc_hours]
     else:
         new_notify_utc_hours = [(local_hour - tz_delta) % 24 for local_hour in hours_data.notify_hours]
         new_notify_local_hours = hours_data.notify_hours
-    await db.users.update_notify_utc_hours(user_id, new_notify_utc_hours)
+    await db.users.update_notify_utc_hours(current_user.id, new_notify_utc_hours)
 
     return SuccessResponse(
         data=schemas.UserNotificationsSettingsOut(
@@ -55,16 +56,15 @@ async def update_notifications_settings(
 
 
 @router.get(
-    '/{user_id}/settings/notifications',
+    '/settings/notifications',
     response_model=schemas.APIResponse[schemas.UserNotificationsSettingsOut]
 )
 async def get_notifications_settings(
-        user_id: schemas.TelegramUserId,
-        db: DatabaseRepo = Depends(get_db)
+    current_user: User = Depends(get_current_user),
 ):
     """ Get user hours to notify from the database. """
-    tz_delta = await db.users.get_tz_delta(user_id)
-    notify_utc_hours = await db.users.get_notify_utc_hours(user_id) or []
+    tz_delta = current_user.time_zone_delta
+    notify_utc_hours = current_user.notify_utc_hours or []
     return SuccessResponse(
         data=schemas.UserNotificationsSettingsOut(
             notify_utc_hours=notify_utc_hours,
@@ -74,43 +74,43 @@ async def get_notifications_settings(
 
 
 @router.get(
-    '/{user_id}/activities/latest',
+    '/activities/latest',
     response_model=schemas.APIResponse[Optional[schemas.ActivityOut]]
 )
 async def get_latest_activity(
-        user_id: schemas.TelegramUserId,
-        db: DatabaseRepo = Depends(get_db)
+    db: DatabaseRepo = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """  Get the latest created activity by user with `user_id`. """
-    latest_activity = await db.users.get_latest_activity(user_id)
+    latest_activity = await db.users.get_latest_activity(current_user.id)
     return SuccessResponse(
         data=schemas.ActivityOut.model_validate(latest_activity) if latest_activity else None
     )
 
 
 @router.get(
-    '/{user_id}/activities/missing_slots/closest',
+    '/activities/missing_slots/closest',
     description='''
     Get the closest missing slots to set activities for user with `user_id`. For newbie users, we display fewer hours.
     ''',
     response_model=schemas.APIResponse[schemas.MissingActivitySlotsOut]
 )
 async def get_activities_closest_missing_slots(
-        user_id: schemas.TelegramUserId,
-        max_missing_slots: int = 24,
-        db: DatabaseRepo = Depends(get_db),
+    max_missing_slots: int = 24,
+    db: DatabaseRepo = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """
     Get the closest missing slots to set activities for user with `user_id`. For newbie users, we display fewer
     slots (6 slots).
 
-    :param user_id: The user's telegram ID.
     :param max_missing_slots: The maximum missing slots to display.
     :param db: The database repository.
+    :param current_user: The current user, which creates the request.
     :return: Data about missing slots to set activities.
     """
     # Get missing slots date range
-    activity_tracker = ActivityTrackerService(db, user_id)
+    activity_tracker = ActivityTrackerService(db, current_user.id)
     date_range = await activity_tracker.get_closest_missing_slots_date_range(max_missing_slots)
     if date_range is None:
         return SuccessResponse(
@@ -140,14 +140,14 @@ async def get_activities_closest_missing_slots(
 
 
 @router.post(
-    '/{user_id}/activities',
+    '/activities',
     description='Creating new activities in UTC time.',
     response_model=schemas.APIResponse[schemas.MessageResponse]
 )
 async def add_activities(
-        user_id: schemas.TelegramUserId,
-        activities: Annotated[List[schemas.ActivityIn], Body(embed=True)],
-        db: DatabaseRepo = Depends(get_db)
+    activities: Annotated[List[schemas.ActivityIn], Body(embed=True)],
+    db: DatabaseRepo = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """ Add a list of new activities for user with `user_id`. """
     utcnow_timestamp = utcnow().timestamp()
@@ -160,7 +160,7 @@ async def add_activities(
             )
 
     try:
-        await db.users.add_activities(user_id, activities)
+        await db.users.add_activities(current_user.id, activities)
     except IntegrityError as exc:
         logger.error(f'Get activity which time is already exist. IntegrityError: {exc}')
         return ErrorResponse(
@@ -176,22 +176,22 @@ async def add_activities(
 
 
 @router.put(
-    '/{user_id}/settings/timezone',
+    '/settings/timezone',
     response_model=schemas.APIResponse[schemas.MessageResponse]
 )
 async def update_user_time_zone(
-        user_id: schemas.TelegramUserId,
-        tz_delta: Annotated[schemas.TzDeltaNumber, Body(embed=True)],
-        db: DatabaseRepo = Depends(get_db)
+    tz_delta: Annotated[schemas.TzDeltaNumber, Body(embed=True)],
+    db: DatabaseRepo = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) :
     """ Update user time zone delta in the database. User_local_time = utc_hour + time_zone_delta (tz_delta). """
-    old_tz_delta = await db.users.get_tz_delta(user_id)
-    await db.users.update_tz_delta(user_id, tz_delta)
+    old_tz_delta = current_user.time_zone_delta
+    await db.users.update_tz_delta(current_user.id, tz_delta)
 
     # Update `notify_utc_hours` for new user time zone
-    old_notify_utc_hours = await db.users.get_notify_utc_hours(user_id)
+    old_notify_utc_hours = current_user.notify_utc_hours
     new_notify_utc_hours = [(hour - tz_delta + old_tz_delta) % 24 for hour in old_notify_utc_hours]
-    await db.users.update_notify_utc_hours(user_id, new_notify_utc_hours)
+    await db.users.update_notify_utc_hours(current_user.id, new_notify_utc_hours)
 
     return SuccessResponse(
         data=schemas.MessageResponse(message="User time zone delta has been updated"),
@@ -200,30 +200,29 @@ async def update_user_time_zone(
 
 
 @router.get(
-    '/{user_id}/settings/timezone',
+    '/settings/timezone',
     response_model=schemas.APIResponse[schemas.UserTimeZoneDeltaOut]
 )
 async def get_user_time_zone(
-        user_id: schemas.TelegramUserId,
-        db: DatabaseRepo = Depends(get_db)
+    current_user: User = Depends(get_current_user),
 ):
     """ Get user time zone delta from the database. """
-    tz_delta = await db.users.get_tz_delta(user_id) or 0
+    tz_delta = current_user.time_zone_delta or 0
     return SuccessResponse(data=schemas.UserTimeZoneDeltaOut(tz_delta=tz_delta))
 
 
 @router.get(
-    '/{user_id}/activities/summary',
+    '/activities/summary',
     response_model=schemas.APIResponse[schemas.UserActivitiesSummaryOut]
 )
 async def get_activity_summary(
-        user_id: schemas.TelegramUserId,
-        db: DatabaseRepo = Depends(get_db)
+    db: DatabaseRepo = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """ Get activity summary for user with `user_id`. """
-    summary = await db.users.get_activities_summary(user_id)
+    summary = await db.users.get_activities_summary(current_user.id)
     activities_summary = schemas.UserActivitiesSummaryOut(
-        data=[
+        summary=[
             schemas.UserActivitySummary(activity_type=activity_type, hours_amount=hours_amount)
             for activity_type, hours_amount in summary
         ]

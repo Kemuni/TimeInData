@@ -14,7 +14,7 @@ async def data_summary(message: types.Message, api: APIParser, bot: Bot):
     async with ChatActionSender.typing(chat_id=message.chat.id, bot=bot):
         users_data = await api.get_activities_summary(message.from_user.id)
         activity_string = 'Yours summary 📊\n'
-        for activity in users_data.data:
+        for activity in users_data.summary:
             activity_string += (
                 f'- <code>{activity.hours_amount}</code> hours of '
                 f'<b>{activity.activity_type.name.capitalize()}</b> {ACTIVITY_TO_EMOJI.get(activity.activity_type, "")}'
