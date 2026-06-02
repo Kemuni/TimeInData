@@ -59,6 +59,7 @@ export function useApiQuery<T>(
       onSuccessRef.current?.(result);
     } catch (err) {
       let errorMessage: string;
+      console.log('Error during query request: ', err);
       if (err instanceof AxiosError)
         errorMessage = err.response?.data?.detail || err.message;
       else

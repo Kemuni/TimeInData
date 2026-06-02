@@ -33,7 +33,7 @@ class ActivitySummary:
 
 @dataclass(slots=True)
 class ActivitiesSummaryOut:
-    data: List[ActivitySummary]
+    summary: List[ActivitySummary]
 
 
 @dataclass(slots=True)

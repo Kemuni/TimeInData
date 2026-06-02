@@ -76,7 +76,8 @@ class UserActivitySummary(BaseModel):
 
 
 class UserActivitiesSummaryOut(BaseModel):
-    data: List[UserActivitySummary]
+    summary: List[UserActivitySummary]
+
 
 class PendingNotificationsOut(BaseModel):
     type: Literal['set_activities_reminder']

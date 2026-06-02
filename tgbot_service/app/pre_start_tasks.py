@@ -30,6 +30,6 @@ async def check_api_service_connection() -> None:
     logger.info('Checking API service connection...')
     async with APIParser.create_client() as client:
         api = APIParser(client)
-        if await api.healthcheck() is False:
+        if not await api.healthcheck():
             raise UnableConnectToAPIError()
         logger.info('Successfully connect to API service!')
